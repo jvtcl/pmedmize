@@ -147,11 +147,11 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person', output
 
   ## Return inputs/outputs
   if(output_minimal){
-    out <- list(datpt,datch,pums,pums_in,pX,Y,V,A,wt,t,wt_matrix)
-    names(out)=c('parent.data','child.data','pums','pums_in','pX','Y','V','A','wt','t','wt_matrix')    
+    out <- list(datpt, datch, pums_in, pX, Y, V, A, wt, t, wt_matrix)
+    names(out)=c('parent.data','child.data','pums_in','pX','Y','V','A','wt','t','wt_matrix')    
   }else{
-    out <- list(n,N,datpt,datch,pums,pums_in,pX,X,Y,V,sV,A,wt,t,q,wt_matrix)
-    names(out)=c('n','N','datpt','datch','pums','pums_in','pX','X','Y','V','sV','A','wt','t','q','wt_matrix')
+    out <- list(n, N, datpt, datch, pums_in, pX, X, Y, V, sV, A, wt, t, q, wt_matrix)
+    names(out)=c('n','N','datpt','datch','pums_in','pX','X','Y','V','sV','A','wt','t','q','wt_matrix')
   }
   
   out
