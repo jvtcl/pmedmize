@@ -91,3 +91,51 @@ res <- pmedm(pums = ipums,
             geo_lookup = geo_lookup,
             output_minimal = FALSE)
 toc()
+
+#### Reliability Assessment ####
+source('code/reliability.R')
+
+# quick diagnostic - standard allocation error of constraints
+sort(abs(sae(res)), decreasing = T)
+
+### Dual Hessian method
+## estimate covariances of model parameters (lambda)
+clam <- with(res, cov.lambda(t, X, sV, N))
+
+## simulate lambdas (takes a few minutes)
+nrep <- 100
+rep_lambda <- with(res, MASS::mvrnorm(n = nrep, mu = res$t$lambda, Sigma = clam / res$N))
+
+## estimated P-MEDM allocation probabilities
+wm <- with(res, wt_matrix / N)
+
+## replicate allocation probabilities
+rep_wm <- pmedm_replicate_probabilities(res, rep_lambda)
+
+## example segment
+s <- rowProds(pmedm_constraints_ind[,c('AGE18U', 'POV')])
+
+## P-MEDM estimates of segment
+# est <- colSums(s * wm)
+# est <- colSums(s * wm * res$N)
+est <- colSums(s * wm * res$N) / colSums(wm * res$N)
+
+## replicate estimates of segment
+rep_est <- lapply(rep_wm, function(r){
+  
+  # colSums(s * r)
+  # colSums(s * r * res$N)
+  colSums(s * r * res$N) / colSums(r * res$N)
+  
+})
+rep_est <- do.call(cbind, rep_est)
+
+## monte carlo error
+mce <- rowSds(rep_est)
+
+## monte carlo coefficient of variation
+mcv <- mce / est
+
+## Monte carlo coefficient of variation 
+## for estimates >=1% of block group pop.
+summary(mcv[est > 0.01])
