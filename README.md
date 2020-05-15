@@ -1,7 +1,6 @@
 # pmedmize
-Utilities for Population Synthesis with the P-MEDM Method
 
-This is a wrapper for [PMEDMrcpp](https://bitbucket.org/nnnagle/pmedmrcpp/src/master) with added functionality for:
+This is a wrapper for [PMEDMrcpp](https://bitbucket.org/nnnagle/pmedmrcpp/src/master) with additional utilities for:
 
 - Building individual-level (PUMS) constraints
 - Reliability assessment
