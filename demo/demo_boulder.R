@@ -1,7 +1,7 @@
 source('code/pmedm.R')
 
 #### PUMS constraints ####
-tp <- '00813'
+tp <- '00803'
 ipums <- read.csv('data/co_pums_acs5_2016.csv.gz')
 ipums <- ipums[ipums$PUMA == as.numeric(tp),]
 
@@ -35,19 +35,47 @@ apply(pmedm_constraints_ind, 2, function(x){
 
 #### summary level constraints ####
 
-## temp, will replace with census API 
-constraints_bg <- read.csv('data/boulder_sum_est_2016_person_bg.csv')
-constraints_trt <- read.csv('data/boulder_sum_est_2016_person_trt.csv')
+# ## temp, will replace with census API 
+# constraints_bg <- read.csv('data/boulder_sum_est_2016_person_bg.csv')
+# constraints_trt <- read.csv('data/boulder_sum_est_2016_person_trt.csv')
 
-## not needed here
-## but if we had multiple PUMAs we could use a lookup table
-## to subset them...
-# source('code/build_puma_lookup.R')
-# puma_lookup <- build_puma_lookup(state = '08')
-# puma_lookup <- puma_lookup[puma_lookup$PUMA5CE %in% tp,]
-# 
-# constraints_trt <- constraints_trt[paste0('0', constraints_trt$GEOID) %in% puma_lookup$trt_id,]
-# constraints_bg <- constraints_bg[substr(constraints_bg$GEOID, 1, 10) %in% constraints_trt$GEOID,]
+### Build data
+## functions for parsing tables from Census API
+source('code/build_pmedm_constraints.R')
+
+# ## set a system environment variable for the API key
+# Sys.setenv(censusapikey = 'your_key_here')
+
+v = listCensusMetadata(name = 'acs/acs5', vintage = 2016, type = 'variables')
+
+acs_tables = c('B01001', 'B03002', 'B09019', 'B17021')
+
+constraints_bg = build_constraints(v = v, 
+                                   tables = acs_tables,
+                                   key = Sys.getenv('censusapikey'),
+                                   name = 'acs/acs5', 
+                                   year = 2016, 
+                                   level = 'block group:*',
+                                   geo = "state:08+county:013",
+                                   verbose = F)
+
+constraints_trt = build_constraints(v = v, 
+                                    tables = acs_tables,
+                                    key = Sys.getenv('censusapikey'),
+                                    name = 'acs/acs5', 
+                                    year = 2016, 
+                                    level = 'tract:*',
+                                    geo = "state:08+county:013",
+                                    verbose = F)
+
+
+## subset summary-level constraints to Boulder City PUMA
+source('code/build_puma_lookup.R')
+puma_lookup <- build_puma_lookup(state = '08')
+puma_lookup <- puma_lookup[puma_lookup$PUMA5CE %in% tp,]
+
+constraints_trt <- constraints_trt[constraints_trt$GEOID %in% puma_lookup$trt_id,]
+constraints_bg <- constraints_bg[substr(constraints_bg$GEOID, 1, 11) %in% constraints_trt$GEOID,]
 
 pmedm_constraints_geo <- function(dat, schema){
   
@@ -79,7 +107,7 @@ pmedm_constraints_bg <- pmedm_constraints_bg[pmedm_constraints_bg[,2] > 0,]
 pmedm_constraints_trt <- pmedm_constraints_trt[pmedm_constraints_trt[,2] > 0,]
 
 # crosswalk
-geo_lookup <- data.frame(bg = pmedm_constraints_bg$GEOID, trt = substr(pmedm_constraints_bg$GEOID, 1, 10))
+geo_lookup <- data.frame(bg = pmedm_constraints_bg$GEOID, trt = substr(pmedm_constraints_bg$GEOID, 1, 11))
  
 #### run P-MEDM solver ####
 library(tictoc) # time it
@@ -102,9 +130,11 @@ sort(abs(sae(res)), decreasing = T)
 ## estimate covariances of model parameters (lambda)
 clam <- with(res, cov.lambda(t, X, sV, N))
 
-## simulate lambdas (takes a few minutes)
+## simulate lambdas
 nrep <- 100
+tic()
 rep_lambda <- with(res, MASS::mvrnorm(n = nrep, mu = res$t$lambda, Sigma = clam / res$N))
+toc()
 
 ## estimated P-MEDM allocation probabilities
 wm <- with(res, wt_matrix / N)
@@ -116,15 +146,11 @@ rep_wm <- pmedm_replicate_probabilities(res, rep_lambda)
 s <- rowProds(pmedm_constraints_ind[,c('AGE18U', 'POV')])
 
 ## P-MEDM estimates of segment
-# est <- colSums(s * wm)
-# est <- colSums(s * wm * res$N)
 est <- colSums(s * wm * res$N) / colSums(wm * res$N)
 
 ## replicate estimates of segment
 rep_est <- lapply(rep_wm, function(r){
   
-  # colSums(s * r)
-  # colSums(s * r * res$N)
   colSums(s * r * res$N) / colSums(r * res$N)
   
 })
@@ -137,5 +163,27 @@ mce <- rowSds(rep_est)
 mcv <- mce / est
 
 ## Monte carlo coefficient of variation 
-## for estimates >=1% of block group pop.
-summary(mcv[est > 0.01])
+summary(mcv)
+plot(mcv ~ est, pch = 16, xlab = 'Prevalence', ylab = 'Monte Carlo CV')
+
+## map results
+library(sf)
+locs <- colnames(res$wt_matrix)
+
+if(!dir.exists('temp')){
+  dir.create('temp')
+}
+
+download.file('https://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_08_bg_500k.zip', 
+              destfile = 'temp/co_bg.zip')
+unzip(zipfile = 'temp/co_bg.zip', exdir = 'temp')
+file.remove('temp/co_bg.zip')
+
+bg <- read_sf('temp', 'cb_2016_08_bg_500k')
+bg <- bg[match(locs, bg$GEOID),]
+
+bg['est'] <- est
+bg['mcv'] <- mcv
+
+plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
+plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') # something is off here - I think the near-zero ests again

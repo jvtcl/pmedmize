@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # pkgdown site
 docs/
+
+# temporary files
+temp/
