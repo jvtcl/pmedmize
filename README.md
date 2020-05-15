@@ -1,9 +1,15 @@
 # pmedmize
-Utilities for Iterative Proportional Fitting with the P-MEDM Method
+Utilities for Population Synthesis with the P-MEDM Method
+
+This is a wrapper for [PMEDMrcpp](https://bitbucket.org/nnnagle/pmedmrcpp/src/master) with added functionality for:
+
+- Building individual-level (PUMS) constraints
+- Reliability assessment
+- Reshaping/manipulating PUMS data
 
 #### Prerequisites 
 
-Nagle's [PMEDMrcpp library](https://bitbucket.org/nnnagle/pmedmrcpp/src/master), which contains the core P-MEDM functionality. To install, use `devtools::install_packages('nnnagle/pmedmrcpp')`.
+To install `PMEDMrcpp`, use `devtools::install_packages('nnnagle/pmedmrcpp')`.
 
 #### References
 
