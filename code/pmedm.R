@@ -1,36 +1,34 @@
 library(PMEDMrcpp)
 library(methods)
 
-modpath = dirname(sys.frame(1)$ofile)
-
-source(paste(modpath, 'build_constraints.R', sep = '/'))
-
-pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person', output_minimal = TRUE){
+pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
+                  output_minimal = TRUE){
 
   "
-  Wrapper for `PMEDMrcpp::pmedm_solve`. Adapted from various examples by Nagle (2013, 2015). 
-  See `PMEDMrcpp::??pmedm_solve`.
-  
+  Wrapper for `PMEDMrcpp::pmedm_solve`. Adapted from various examples by Nagle
+  (2013, 2015). See `PMEDMrcpp::??pmedm_solve`.
+
   Additional info at https://www.rpubs.com/nnnagle/PMEDM_Example.
-  
+
   ARGUMENTS
- 
+
     datch: child summary level constraints, estimates AND se's
 
     datpt: parent summary level constraints, estimates AND se's
 
     type: the design weights to use, one of 'person' or 'household'
-        
-    output_minimal : if TRUE, excludes intermediate variables from the output. If fALSE, outputs all P-MEDM
+
+    output_minimal : if TRUE, excludes intermediate variables from the output.
+    If fALSE, outputs all P-MEDM
         inputs/outputs.
-    
+
 
   VALUES
 
     Returns a list containing the P-MEDM object and model variables.
-  
+
   "
-  
+
   ## Microdata inputs
   if(type=='person'){
     wt <- pums$PERWT
@@ -64,24 +62,24 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person', output
   datch[,1] <- as.character(datch[,1])
   datch <- datch[datch[,1] %in% geo_lookup[,1],]
   datch <- datch[match(row.names(A2),datch[,1]),]
-  
+
   # subset by pums input names
   colnames(datch)[-1]=gsub('_','',colnames(datch[-1]))
-  
+
   # ensure geoid, standard error values included
-  tempch <- data.frame(GEOID = datch$GEOID, datch[,na.omit(match(colnames(pums_in), colnames(datch)))]) 
+  tempch <- data.frame(GEOID = datch$GEOID, datch[,na.omit(match(colnames(pums_in), colnames(datch)))])
   datch <- data.frame(tempch, datch[,paste0(names(tempch)[-1], 's')])
-  
+
   datpt <- datpt[datpt[,1] %in% geo_lookup[,2],]
   datpt <- datpt[match(row.names(A1),datpt[,1]),]
-  
+
   # subset by pums input name
   colnames(datpt)[-1] <- gsub('_','',colnames(datpt[-1]))
-  
+
   # ensure geoid, standard error values included
   temppt <- data.frame(GEOID = datpt$GEOID, datpt[,na.omit(match(colnames(pums_in), colnames(datpt)))])
   datpt <- data.frame(temppt, datpt[,paste0(names(temppt)[-1], 's')])
-  
+
   ## Generate summary-level inputs
   sumpt <- datpt[,-1]
   sumpt <- sumpt[!endsWith(names(sumpt), 's')]
@@ -102,15 +100,15 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person', output
   ## Check column match across constraints
   check_nb_cols <- ncol(pums_in) == ncol(sumpt)
   check_trt_cols <- ncol(pums_in) == ncol(sumch)
-  
+
   ## Check dimensions of constraints
   sumpt.check <- sapply(colnames(sumpt), function(x) paste(unlist(strsplit(x, '_')), collapse=''))
   sumch.check <- sapply(colnames(sumch), function(x) paste(unlist(strsplit(x, '_')), collapse=''))
-  
+
   check_nb_cols_len <- sum(colnames(pums_in) == sumpt.check) == ncol(sumpt)
   check_trt_cols_len <- sum(colnames(pums_in) == sumch.check) == ncol(sumch)
   checks <- c(check_nb_cols, check_nb_cols_len, check_trt_cols, check_trt_cols_len)
-  
+
   if(sum(checks)!=length(checks)){
     stop('PUMS and Summary Level columns do not match.')
   }
@@ -129,7 +127,7 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person', output
 
   # All possible PUMS Allocations
   X <- t(rbind(kronecker(t(pX[[1]]), A[[1]]), kronecker(t(pX[[2]]), A[[2]])))
-  
+
   # Create design weights and normalize
   q <- matrix(wt, n, dim(A[[1]])[2])
   q <- q / sum(as.numeric(q))
@@ -148,12 +146,12 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person', output
   ## Return inputs/outputs
   if(output_minimal){
     out <- list(datpt, datch, pums_in, pX, Y, V, A, wt, t, wt_matrix)
-    names(out)=c('parent.data','child.data','pums_in','pX','Y','V','A','wt','t','wt_matrix')    
+    names(out)=c('parent.data','child.data','pums_in','pX','Y','V','A','wt','t','wt_matrix')
   }else{
     out <- list(n, N, datpt, datch, pums_in, pX, X, Y, V, sV, A, wt, t, q, wt_matrix)
     names(out)=c('n','N','datpt','datch','pums_in','pX','X','Y','V','sV','A','wt','t','q','wt_matrix')
   }
-  
+
   out
 
 }

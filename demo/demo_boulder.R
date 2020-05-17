@@ -1,3 +1,4 @@
+setwd('../')
 source('code/pmedm.R')
 
 #### PUMS constraints ####
@@ -16,14 +17,14 @@ schema <- schema[!schema$constraint %in% c('LEP', 'POV.AGE18U'),] # oops, these 
 library(matrixStats)
 sc <- unique(schema$constraint)
 pmedm_constraints_ind <- lapply(sc, function(x){
-  
+
   xc <- schema$code[schema$constraint == x]
   cout <- constraints_pums$pums_in[,xc]
   if(length(xc) > 1){
     cout <- ifelse(rowSums(cout) >= 1, 1, 0)
   }
   cout
-  
+
 })
 names(pmedm_constraints_ind) <- sc
 pmedm_constraints_ind <- do.call(cbind, pmedm_constraints_ind)
@@ -34,11 +35,6 @@ apply(pmedm_constraints_ind, 2, function(x){
 })
 
 #### summary level constraints ####
-
-# ## temp, will replace with census API 
-# constraints_bg <- read.csv('data/boulder_sum_est_2016_person_bg.csv')
-# constraints_trt <- read.csv('data/boulder_sum_est_2016_person_trt.csv')
-
 ### Build data
 ## functions for parsing tables from Census API
 source('code/build_pmedm_constraints.R')
@@ -50,20 +46,20 @@ v = listCensusMetadata(name = 'acs/acs5', vintage = 2016, type = 'variables')
 
 acs_tables = c('B01001', 'B03002', 'B09019', 'B17021')
 
-constraints_bg = build_constraints(v = v, 
+constraints_bg = build_constraints(v = v,
                                    tables = acs_tables,
                                    key = Sys.getenv('censusapikey'),
-                                   name = 'acs/acs5', 
-                                   year = 2016, 
+                                   name = 'acs/acs5',
+                                   year = 2016,
                                    level = 'block group:*',
                                    geo = "state:08+county:013",
                                    verbose = F)
 
-constraints_trt = build_constraints(v = v, 
+constraints_trt = build_constraints(v = v,
                                     tables = acs_tables,
                                     key = Sys.getenv('censusapikey'),
-                                    name = 'acs/acs5', 
-                                    year = 2016, 
+                                    name = 'acs/acs5',
+                                    year = 2016,
                                     level = 'tract:*',
                                     geo = "state:08+county:013",
                                     verbose = F)
@@ -78,11 +74,11 @@ constraints_trt <- constraints_trt[constraints_trt$GEOID %in% puma_lookup$trt_id
 constraints_bg <- constraints_bg[substr(constraints_bg$GEOID, 1, 11) %in% constraints_trt$GEOID,]
 
 pmedm_constraints_geo <- function(dat, schema){
-  
+
   sc <- unique(schema$constraint)
-  
+
   pmedm_constraints_geo <- lapply(sc, function(x){
-    # print(x)  
+    # print(x)
     xc <- schema$code[schema$constraint == x]
     cout <- dat[,xc]
     se.cout <- dat[,paste0(xc, 's')]
@@ -93,10 +89,10 @@ pmedm_constraints_geo <- function(dat, schema){
     cout <- cbind(cout, se.cout)
     colnames(cout) <- c(x, paste0(x, 's'))
     cout
-    
+
   })
   data.frame(GEOID = dat[,1], do.call(cbind, pmedm_constraints_geo))
-  
+
 }
 
 pmedm_constraints_bg <- pmedm_constraints_geo(constraints_bg, schema)
@@ -108,7 +104,7 @@ pmedm_constraints_trt <- pmedm_constraints_trt[pmedm_constraints_trt[,2] > 0,]
 
 # crosswalk
 geo_lookup <- data.frame(bg = pmedm_constraints_bg$GEOID, trt = substr(pmedm_constraints_bg$GEOID, 1, 11))
- 
+
 #### run P-MEDM solver ####
 library(tictoc) # time it
 tic()
@@ -150,9 +146,9 @@ est <- colSums(s * wm * res$N) / colSums(wm * res$N)
 
 ## replicate estimates of segment
 rep_est <- lapply(rep_wm, function(r){
-  
+
   colSums(s * r * res$N) / colSums(r * res$N)
-  
+
 })
 rep_est <- do.call(cbind, rep_est)
 
@@ -162,7 +158,7 @@ mce <- rowSds(rep_est)
 ## monte carlo coefficient of variation
 mcv <- mce / est
 
-## Monte carlo coefficient of variation 
+## Monte carlo coefficient of variation
 summary(mcv)
 plot(mcv ~ est, pch = 16, xlab = 'Prevalence', ylab = 'Monte Carlo CV')
 
@@ -174,7 +170,7 @@ if(!dir.exists('temp')){
   dir.create('temp')
 }
 
-download.file('https://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_08_bg_500k.zip', 
+download.file('https://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_08_bg_500k.zip',
               destfile = 'temp/co_bg.zip')
 unzip(zipfile = 'temp/co_bg.zip', exdir = 'temp')
 file.remove('temp/co_bg.zip')
