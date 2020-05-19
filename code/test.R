@@ -5,7 +5,7 @@ pums <- read.csv('data/co_pums_acs5_2016.csv.gz')
 
 pums <- pums[pums$PUMA == 803,]
 
-# head(cbind(pums$SERIAL, hhincr(pums)), 10)
+# head(cbind(pums$SERIAL, builtyr(pums)), 50)
 
 constraints <- c('B01001', 'B03002', 'B17001', 'B17021', 'B16008', 'B09019')
 

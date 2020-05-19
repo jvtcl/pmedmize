@@ -2,19 +2,19 @@ library(plyr)
 
 data_path = paste(dirname(dirname(sys.frame(1)$ofile)), 'data/', sep = '/')
 
-assign_person_ids=function(pums){
-
-  # assign serial numbers to rownames
-  unlist(sapply(unique(pums$SERIAL),function(s){
-    ts=pums$SERIAL[pums$SERIAL==s]
-    if(length(ts)>1){
-      paste0(s,letters[1:length(ts)])
-    }else{
-      s
-    }
-  }))
-
-}
+# assign_person_ids=function(pums){
+#
+#   # assign serial numbers to rownames
+#   unlist(sapply(unique(pums$SERIAL),function(s){
+#     ts=pums$SERIAL[pums$SERIAL==s]
+#     if(length(ts)>1){
+#       paste0(s,letters[1:length(ts)])
+#     }else{
+#       s
+#     }
+#   }))
+#
+# }
 
 build_data_person=function(pums, parent_unit, child_unit){
 

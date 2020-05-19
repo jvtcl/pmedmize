@@ -1,6 +1,25 @@
 library(PMEDMrcpp)
 library(methods)
 
+assign_person_ids=function(pums){
+
+  "
+  Helper function. Generates a unique serial for
+  every member of a household.
+  "
+
+  # assign serial numbers to rownames
+  unlist(sapply(unique(pums$SERIAL),function(s){
+    ts=pums$SERIAL[pums$SERIAL==s]
+    if(length(ts)>1){
+      paste0(s,letters[1:length(ts)])
+    }else{
+      s
+    }
+  }))
+
+}
+
 pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
                   output_minimal = TRUE){
 

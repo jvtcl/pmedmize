@@ -3,6 +3,24 @@ Definitions for intermediate variables to build individual-level
 P-MEDM constraints.
 "
 
+assign_householder_item_level <- function(pums, v){
+
+  "
+  Helper function. Assigns the item level of the
+  householder to all members of the household
+  (for building household-level intermediates).
+  "
+
+  v <- lapply(split(v, pums$SERIAL), function(s){
+
+    rep(s[1], length(s))
+
+  })
+
+  factor(unlist(v))
+
+}
+
 ager <- function(pums){
 
   "
@@ -47,6 +65,27 @@ agecitizenr <- function(pums){
 
 }
 
+agehhincr <- function(pums){
+
+  "
+  Household: Householder Age (Income Definitions)
+  "
+
+  age.brks.hhinc=c(0,25,45,65,Inf)
+  age.hhinc.labels=c(paste(age.brks.hhinc[1:3],c(age.brks.hhinc[2:4])-1,sep='-'),'65+')
+
+  v <- cut(as.numeric(pums$AGE),
+           breaks = age.brks.hhinc,
+           include.lowest = TRUE,
+           right = FALSE,
+           labels = age.hhinc.labels)
+
+  v <- assign_householder_item_level(pums, v)
+
+  model.matrix(~v - 1)
+
+}
+
 agepovr <- function(pums){
 
   "
@@ -69,6 +108,41 @@ agepovr <- function(pums){
 
 }
 
+agetenr <- function(pums){
+
+  "
+  Household: Householder Age (Tenure Definitions)
+  "
+
+  age.brks.tenure <- c(0,15,25,35,45,55,60,65,75,85,Inf)
+  age.tenure.labels<-c(paste(age.brks.tenure[1:9],c(age.brks.tenure[2:10])-1,sep='-'),'85+')
+
+  v <- cut(as.numeric(pums$AGE),
+           breaks = age.brks.tenure,
+           include.lowest = TRUE,
+           right = FALSE,
+           labels = age.tenure.labels)
+
+  v <- assign_householder_item_level(pums, v)
+
+  model.matrix(~v - 1)
+
+}
+
+builtyr <- function(pums){
+
+  "
+  Household: Dwelling Built Year
+  "
+
+  built_key <- read.csv('data/PUMS_BUILTYR2.csv')
+  v <- factor(built_key$label[match(pums$BUILTYR2,built_key$code)],
+                 levels = unique(built_key$label))
+
+  model.matrix(~v - 1)[,-1] # omit `gq` column (placeholder)
+
+}
+
 citizenr <- function(pums){
 
   "
@@ -78,6 +152,22 @@ citizenr <- function(pums){
 
   v <- factor(ifelse(pums$CITIZEN<2,1,
                               ifelse(pums$CITIZEN==2,2,3)))
+
+  model.matrix(~v - 1)
+
+}
+
+eldr <- function(pums){
+
+  "
+  Household: Presence of People Age 60 and Over
+  "
+
+  v <- factor(unlist(sapply(unique(pums$SERIAL), function(s){
+    as = pums$AGE[pums$SERIAL == s]
+    elders = ifelse(any(as >= 60),1,0)
+    rep(elders,length(as))
+  })))
 
   model.matrix(~v - 1)
 
@@ -191,21 +281,47 @@ hhracer <- function(pums){
                  'Two races including Some other race',
                  'Two races excluding Some other race, and three or more races')
 
-  race_rc <- cut(pums$RACE,
+  v <- cut(pums$RACE,
            breaks=race.brks,
            labels=race.labels,
            include.lowest=TRUE,
            right=FALSE)
 
-  v <- lapply(split(race_rc, pums$SERIAL), function(s){
+  v <- assign_householder_item_level(pums, v)
 
-    rep(s[1], length(s))
+  model.matrix(~v - 1)
+
+}
+
+hhhispanr <- function(pums){
+
+  "
+  Household: Hispanic/Latino Ethnicity of Householder
+  "
+
+  v <- factor(ifelse(pums$HISPAN>0,'Hispanic/Latino','Not Hispanic/Latino'))
+
+  v <- assign_householder_item_level(pums, v)
+
+  model.matrix(~v - 1)
+
+}
+
+hhsizr <- function(pums){
+
+  hhsize <- lapply(split(pums, pums$SERIAL), function(s){
+
+    rep(nrow(s), nrow(s))
 
   })
 
-  v <- factor(unlist(v))
+  hhsize <- unlist(hhsize)
 
-   model.matrix(~v - 1)
+  v <- factor(ifelse(hhsize >= 7, '7+', hhsize),
+              levels=c(as.character(seq(1, 6, by = 1)), '7+'))
+
+  model.matrix(~v - 1)
+
 
 }
 
@@ -261,6 +377,22 @@ marstr <- function(pums){
     head_spouse_present = sm[1]
     mar_hh=ifelse(head_spouse_present==1,1,0)
     rep(mar_hh,length(sm))
+  })))
+
+  model.matrix(~v - 1)
+
+}
+
+minr <- function(pums){
+
+  "
+  Household: Presence of People Under Age 18
+  "
+
+  v <- factor(unlist(sapply(unique(pums$SERIAL), function(s){
+    as = pums$AGE[pums$SERIAL == s]
+    minors = ifelse(any(as < 18), 1, 0)
+    rep(minors, length(as))
   })))
 
   model.matrix(~v - 1)
@@ -369,6 +501,35 @@ speakengr <- function(pums){
   model.matrix(~v - 1)
 
 }
+
+tenr <- function(pums){
+
+  "
+  Household: Tenure
+  "
+
+  v <- factor(with(pums, ifelse(OWNERSHP==1, 'Own', 'Rent')))
+
+  model.matrix(~v - 1)
+
+}
+
+unitsr <- function(pums){
+
+  "
+  Household: Units in Structure
+  "
+
+  units_key <- read.csv('data/PUMS_UNITSSTR.csv')
+  v <- factor(units_key$label[match(pums$UNITSSTR, units_key$code)],
+              levels = units_key$label)
+
+  model.matrix(~v - 1)[,-1] # omit `gq` column (placeholder)
+
+}
+
+
+#####
 
 temp <- function(pums){
 
