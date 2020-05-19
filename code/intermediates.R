@@ -136,6 +136,29 @@ hheadr <- function(pums){
 
 }
 
+hhincr <- function(pums){
+
+  "
+  Household: Income
+  "
+
+  hhinc.brks=c(0,10,15,20,25,30,35,40,45,50,60,75,100,125,150,200,Inf)
+  hhinc.labels=c(paste0(paste(hhinc.brks[1:15],c(hhinc.brks[2:16])-0.1,sep='-'),'k'),'200k+')
+
+  # safeguard - treat negative income as 0 income
+  HHINCOME.safe = pums$HHINCOME
+  HHINCOME.safe[HHINCOME.safe < 0] = 0
+
+  v <- cut(as.numeric(HHINCOME.safe),
+      breaks=(1000*hhinc.brks),
+      include.lowest=TRUE,
+      right=FALSE,
+      labels=hhinc.labels)
+
+  model.matrix(~v - 1)
+
+}
+
 hheadsexr <- function(pums){
 
   "
@@ -147,6 +170,42 @@ hheadsexr <- function(pums){
   }),labels=c('Male', 'Female'))
 
   model.matrix(~v - 1)
+
+}
+
+hhracer <- function(pums){
+
+  "
+  Household: Race of Householder
+  "
+
+  race.brks <- c(-Inf,2,3,4,5,6,7,8,9,Inf)
+
+  race.labels <-c('White alone',
+                 'Black or African American alone',
+                 'American Indian and Alaska Native alone',
+                 'Asian alone',
+                 'Native Hawaiian and Other Pacific Islander alone',
+                 'Some other race alone',
+                 'Two or more races',
+                 'Two races including Some other race',
+                 'Two races excluding Some other race, and three or more races')
+
+  race_rc <- cut(pums$RACE,
+           breaks=race.brks,
+           labels=race.labels,
+           include.lowest=TRUE,
+           right=FALSE)
+
+  v <- lapply(split(race_rc, pums$SERIAL), function(s){
+
+    rep(s[1], length(s))
+
+  })
+
+  v <- factor(unlist(v))
+
+   model.matrix(~v - 1)
 
 }
 
