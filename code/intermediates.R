@@ -129,7 +129,7 @@ agetenr <- function(pums){
 
 }
 
-builtyr <- function(pums){
+builtr <- function(pums){
 
   "
   Household: Dwelling Built Year
