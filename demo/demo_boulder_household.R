@@ -7,8 +7,8 @@ ipums <- read.csv('data/co_pums_acs5_2016.csv.gz')
 ipums <- ipums[ipums$PUMA == as.numeric(tp),]
 
 ## Generate tables for building constraints
-schema <- read.csv('data/example_constraints.csv', stringsAsFactors = F)
-schema <- schema[!schema$constraint %in% c('LEP', 'POV.AGE18U'),] # oops, these aren't available for block groups
+schema <- read.csv('data/example_constraints_household.csv', stringsAsFactors = F)
+schema <- schema[!startsWith(schema$constraint, 'BUILT.'),] # test
 
 cid <- unique(substr(schema$code, 1, 6)) # constraint table IDs
 
@@ -27,7 +27,7 @@ ctable <- do.call(cbind, ctable)
 library(matrixStats)
 sc <- unique(schema$constraint)
 pmedm_constraints_ind <- lapply(sc, function(x){
-
+  # print(x)
   xc <- schema$code[schema$constraint == x]
   cout <- ctable[,xc]
   if(length(xc) > 1){
@@ -58,8 +58,12 @@ v = listCensusMetadata(name = 'acs/acs5', vintage = 2016, type = 'variables')
 
 # acs_tables = c('B01001', 'B03002', 'B09019', 'B17021')
 
+## need to use sub-tables for B25003
+cid2 <- cid[cid != 'B25003']
+cid2 <- c(cid2, paste0('B25003', toupper(letters[1:9])))
+
 constraints_bg = build_constraints(v = v,
-                                   tables = cid,
+                                   tables = cid2,
                                    key = Sys.getenv('censusapikey'),
                                    name = 'acs/acs5',
                                    year = 2016,
@@ -68,7 +72,7 @@ constraints_bg = build_constraints(v = v,
                                    verbose = F)
 
 constraints_trt = build_constraints(v = v,
-                                    tables = cid,
+                                    tables = cid2,
                                     key = Sys.getenv('censusapikey'),
                                     name = 'acs/acs5',
                                     year = 2016,
@@ -121,6 +125,7 @@ geo_lookup <- data.frame(bg = pmedm_constraints_bg$GEOID, trt = substr(pmedm_con
 library(tictoc) # time it
 tic()
 res <- pmedm(pums = ipums,
+             type = 'household',
             pums_in = pmedm_constraints_ind,
             datch = pmedm_constraints_bg,
             datpt = pmedm_constraints_trt,

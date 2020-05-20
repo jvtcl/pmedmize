@@ -1,0 +1,102 @@
+constraint,code,desc
+HH.MINR,B11005002,Minors (Age Under 18) Present
+HH.MINR.FAM,B11005003,"Married-Couple Family, Minors (Age Under 18) Present"
+HH.NFAM,B11005017,Non-Family Household
+HH.ELDR,B11006002,Household Members Age 60 or Over
+HH.ELDR.FAM,B11006003,"Married-Couple Family, Household Members Age 60 or Over"
+HH.ELDR.NFAM,B11006008,"Non-Family Household, Household Members Age 60 or Over"
+HH.FAM.GE3,B11016004,Family Household with 3 or More members
+HH.FAM.GE3,B11016005,Family Household with 3 or More members
+HH.FAM.GE3,B11016006,Family Household with 3 or More members
+HH.FAM.GE3,B11016007,Family Household with 3 or More members
+HH.FAM.GE3,B11016008,Family Household with 3 or More members
+HH.NFAM.GE3,B11016012,Non-Family Household with 3 or More members
+HH.NFAM.GE3,B11016013,Non-Family Household with 3 or More members
+HH.NFAM.GE3,B11016014,Non-Family Household with 3 or More members
+HH.NFAM.GE3,B11016015,Non-Family Household with 3 or More members
+HH.NFAM.GE3,B11016016,Non-Family Household with 3 or More members
+LIVING.ALONE,B11016010,Living Alone
+AGE.25.64,B19037019,Householder Age 25 or Over
+AGE.GE65,B19037053,Householder Age 65 or Over
+HH.INCOME.L50K,B19037003,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037004,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037005,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037006,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037007,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037008,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037009,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037010,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037011,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037020,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037021,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037022,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037023,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037024,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037025,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037026,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037027,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037028,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037037,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037038,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037039,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037040,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037041,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037042,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037043,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037044,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037054,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037055,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037056,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037057,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037058,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037059,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037060,Annual Household Income Less Than 50k USD
+HH.INCOME.L50K,B19037061,Annual Household Income Less Than 50k USD
+TENR.RENT,B25003A003,Renter-Occupied Household
+TENR.RENT,B25003B003,Renter-Occupied Household
+TENR.RENT,B25003C003,Renter-Occupied Household
+TENR.RENT,B25003D003,Renter-Occupied Household
+TENR.RENT,B25003E003,Renter-Occupied Household
+TENR.RENT,B25003F003,Renter-Occupied Household
+TENR.RENT,B25003G003,Renter-Occupied Household
+TENR.RENT,B25003H003,Renter-Occupied Household
+TENR.RENT,B25003I003,Renter-Occupied Household
+RACW,B25003A001,"White, non-Hispanic/Latino Householder"
+RACHL,B25003I001,Hispanic/Latino Householder
+RACW.RENT,B25003A003,"Renter-Occupied Household, White non-Hispanic/Latino Householder"
+RACHL.RENT,B25003I003,"Renter-Occupied Household, Hispanic/Latino Householder"
+AGE.25.64.RENT,B25007014,"Renter-Occupied Household, Householder Age 25-64"
+AGE.25.64.RENT,B25007015,"Renter-Occupied Household, Householder Age 25-64"
+AGE.25.64.RENT,B25007016,"Renter-Occupied Household, Householder Age 25-64"
+AGE.25.64.RENT,B25007017,"Renter-Occupied Household, Householder Age 25-64"
+AGE.25.64.RENT,B25007018,"Renter-Occupied Household, Householder Age 25-64"
+UNITS.1,B25032003,Single-Unit Attached or Detached Home
+UNITS.1,B25032004,Single-Unit Attached or Detached Home
+UNITS.1,B25032014,Single-Unit Attached or Detached Home
+UNITS.1,B25032015,Single-Unit Attached or Detached Home
+UNITS.1.RENT,B25032014,"Single-Unit Attached or Detached Home, Renter-Occupied"
+UNITS.1.RENT,B25032015,"Single-Unit Attached or Detached Home, Renter-Occupied"
+UNITS.GE10,B25032008,Multi-Unit Dwelling with 10 or more Units
+UNITS.GE10,B25032009,Multi-Unit Dwelling with 10 or more Units
+UNITS.GE10,B25032010,Multi-Unit Dwelling with 10 or more Units
+UNITS.GE10,B25032019,Multi-Unit Dwelling with 10 or more Units
+UNITS.GE10,B25032020,Multi-Unit Dwelling with 10 or more Units
+UNITS.GE10,B25032021,Multi-Unit Dwelling with 10 or more Units
+UNITS.GE10.RENT,B25032019,"Multi-Unit Dwelling with 10 or more Units, Renter-Occupied"
+UNITS.GE10.RENT,B25032020,"Multi-Unit Dwelling with 10 or more Units, Renter-Occupied"
+UNITS.GE10.RENT,B25032021,"Multi-Unit Dwelling with 10 or more Units, Renter-Occupied"
+BUILT.PRE80,B25036008,Dwelling Built before 1980
+BUILT.PRE80,B25036009,Dwelling Built before 1980
+BUILT.PRE80,B25036010,Dwelling Built before 1980
+BUILT.PRE80,B25036011,Dwelling Built before 1980
+BUILT.PRE80,B25036012,Dwelling Built before 1980
+BUILT.PRE80,B25036019,Dwelling Built before 1980
+BUILT.PRE80,B25036020,Dwelling Built before 1980
+BUILT.PRE80,B25036021,Dwelling Built before 1980
+BUILT.PRE80,B25036022,Dwelling Built before 1980
+BUILT.PRE80,B25036023,Dwelling Built before 1980
+BUILT.PRE80.RENT,B25036019,"Dwelling Built before 1980, Renter-Occupied Unit"
+BUILT.PRE80.RENT,B25036020,"Dwelling Built before 1980, Renter-Occupied Unit"
+BUILT.PRE80.RENT,B25036021,"Dwelling Built before 1980, Renter-Occupied Unit"
+BUILT.PRE80.RENT,B25036022,"Dwelling Built before 1980, Renter-Occupied Unit"
+BUILT.PRE80.RENT,B25036023,"Dwelling Built before 1980, Renter-Occupied Unit"
