@@ -1,4 +1,4 @@
-setwd('../')
+# setwd('../')
 source('code/pmedm.R')
 
 #### PUMS constraints ####
@@ -6,12 +6,22 @@ tp <- '00803'
 ipums <- read.csv('data/co_pums_acs5_2016.csv.gz')
 ipums <- ipums[ipums$PUMA == as.numeric(tp),]
 
-## premade individual-level constraints
-## we'll select from these to run the P-MEDM solver
-constraints_pums <- build_data_person(ipums, 'trt', 'bg')
-
+## Generate tables for building constraints
 schema <- read.csv('data/example_constraints.csv', stringsAsFactors = F)
 schema <- schema[!schema$constraint %in% c('LEP', 'POV.AGE18U'),] # oops, these aren't available for block groups
+
+cid <- unique(substr(schema$code, 1, 6)) # constraint table IDs
+
+source('code/intermediates.R')
+source('code/build_constraints_ind.R')
+ctable <- lapply(cid, function(v){
+  
+  do.call(v, args = list(pums = ipums))
+  
+})
+ctable <- do.call(cbind, ctable)
+
+apply(ctable, 2, table)
 
 ## build constraints according to schema
 library(matrixStats)
@@ -19,7 +29,7 @@ sc <- unique(schema$constraint)
 pmedm_constraints_ind <- lapply(sc, function(x){
 
   xc <- schema$code[schema$constraint == x]
-  cout <- constraints_pums$pums_in[,xc]
+  cout <- ctable[,xc]
   if(length(xc) > 1){
     cout <- ifelse(rowSums(cout) >= 1, 1, 0)
   }
@@ -40,14 +50,16 @@ apply(pmedm_constraints_ind, 2, function(x){
 source('code/build_pmedm_constraints.R')
 
 # ## set a system environment variable for the API key
-# Sys.setenv(censusapikey = 'your_key_here')
+#' ```
+#' Sys.setenv(censusapikey = 'your_key_here')
+#' ````
 
 v = listCensusMetadata(name = 'acs/acs5', vintage = 2016, type = 'variables')
 
-acs_tables = c('B01001', 'B03002', 'B09019', 'B17021')
+# acs_tables = c('B01001', 'B03002', 'B09019', 'B17021')
 
 constraints_bg = build_constraints(v = v,
-                                   tables = acs_tables,
+                                   tables = cid,
                                    key = Sys.getenv('censusapikey'),
                                    name = 'acs/acs5',
                                    year = 2016,
@@ -56,7 +68,7 @@ constraints_bg = build_constraints(v = v,
                                    verbose = F)
 
 constraints_trt = build_constraints(v = v,
-                                    tables = acs_tables,
+                                    tables = cid,
                                     key = Sys.getenv('censusapikey'),
                                     name = 'acs/acs5',
                                     year = 2016,
@@ -121,6 +133,7 @@ source('code/reliability.R')
 
 # quick diagnostic - standard allocation error of constraints
 sort(abs(sae(res)), decreasing = T)
+mean(abs(sae(res)))
 
 ### Dual Hessian method
 ## estimate covariances of model parameters (lambda)
@@ -182,4 +195,6 @@ bg['est'] <- est
 bg['mcv'] <- mcv
 
 plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
-plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') # something is off here - I think the near-zero ests again
+plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') 
+
+plot(bg[c('est', 'mcv')], lwd = 0.25)
