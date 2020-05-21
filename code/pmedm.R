@@ -1,6 +1,25 @@
 library(PMEDMrcpp)
 library(methods)
 
+assign_person_ids=function(pums){
+
+  "
+  Helper function. Generates a unique serial for
+  every member of a household.
+  "
+
+  # assign serial numbers to rownames
+  unlist(sapply(unique(pums$SERIAL),function(s){
+    ts=pums$SERIAL[pums$SERIAL==s]
+    if(length(ts)>1){
+      paste0(s,letters[1:length(ts)])
+    }else{
+      s
+    }
+  }))
+
+}
+
 pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
                   output_minimal = TRUE){
 
@@ -28,12 +47,20 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
     Returns a list containing the P-MEDM object and model variables.
 
   "
+  
+  if(!type %in% c('person', 'household')){
+    stop('Argument `type` must be one of: `person`, `household`.')
+  }
 
   ## Microdata inputs
   if(type=='person'){
     wt <- pums$PERWT
     serial <- assign_person_ids(pums)
   }else{
+    # subset to household head, limit to occupied housing units
+    hhsub <- (pums$RELATED == 101) & (pums$GQ %in% c(1:2))
+    pums <- pums[hhsub,] 
+    pums_in <- pums_in[hhsub,] 
     wt <- pums$HHWT
     serial <- pums$SERIAL
   }

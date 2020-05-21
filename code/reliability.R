@@ -32,8 +32,8 @@ sae <- function(res){
 cov.lambda <- function(t, X, sV, N){
   
   "
-  Computes the covariance matrix of the P-MEDM
-  parameters lambda. 
+  Computes the covariance matrix (inverse Hessian)
+  of the P-MEDM parameters lambda. 
   
       t: P-MEDM object
   

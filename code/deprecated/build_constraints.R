@@ -2,29 +2,29 @@ library(plyr)
 
 data_path = paste(dirname(dirname(sys.frame(1)$ofile)), 'data/', sep = '/')
 
-assign_person_ids=function(pums){
-  
-  # assign serial numbers to rownames
-  unlist(sapply(unique(pums$SERIAL),function(s){
-    ts=pums$SERIAL[pums$SERIAL==s]
-    if(length(ts)>1){
-      paste0(s,letters[1:length(ts)])
-    }else{
-      s
-    }
-  }))
-
-}
+# assign_person_ids=function(pums){
+#
+#   # assign serial numbers to rownames
+#   unlist(sapply(unique(pums$SERIAL),function(s){
+#     ts=pums$SERIAL[pums$SERIAL==s]
+#     if(length(ts)>1){
+#       paste0(s,letters[1:length(ts)])
+#     }else{
+#       s
+#     }
+#   }))
+#
+# }
 
 build_data_person=function(pums, parent_unit, child_unit){
-  
+
   #### Setup: Define Breaks ####
   cat('Setup: Define Breaks','\n')
   age.brks <- c(0,5,10,15,18,20,21,22,25,30,35,40,45,50,55,60,62,65,67, 70, 75,80,85,Inf)
   age.brks.pov=c(0,5,6,12,15,16,18,25,35,45,55,65,75,Inf)
   age.brks.citizen=c(-Inf,5,18,Inf)
   race.brks=c(-Inf,2,3,4,5,6,7,8,9,Inf)
-  
+
   #### Setup: Define Labels ####
   age.labels<-c(paste(age.brks[1:22],c(age.brks[2:23])-1,sep='-'),'85+')
   age.pov.labels=c(paste(age.brks.pov[1:12],c(age.brks.pov[2:13])-1,sep='-'),'75+')
@@ -35,7 +35,7 @@ build_data_person=function(pums, parent_unit, child_unit){
                  'Two races excluding Some other race, and three or more races')
   # race.labels=rip.metadata.from.census.reporter('B02001')$colNames[-1]
   sex.labels<-c("Male","Female")
-  
+
   #### Setup: Reclassify Variables ####
   cat('Setup: Reclassify Variables','\n')
   pums$ager <-cut(as.numeric(pums$AGE),breaks=age.brks, include.lowest=TRUE, right=FALSE,labels=age.labels)
@@ -46,13 +46,13 @@ build_data_person=function(pums, parent_unit, child_unit){
   pums$hispanr=factor(ifelse(pums$HISPAN>0,'Hispanic/Latino','Not Hispanic/Latino'))
   pums$citizenr=factor(ifelse(pums$CITIZEN<2,1,
                               ifelse(pums$CITIZEN==2,2,3))) # citizen status: US citizen, naturalized, non citizen
-  
+
   # Poverty Status #
   cat('...Poverty Status','\n')
   # pums$povr=factor(ifelse(as.numeric(pums$POVERTY)<100,'Below_Pov','Above_Pov'))
   pums$povr=factor(ifelse(pums$POVERTY<100 & pums$POVERTY>0,'Below_Pov',
                           ifelse(pums$POVERTY>=100,'Above_Pov','Undetermined')))
-  
+
   # Language #
   cat('...Language','\n')
   # 1: English, 2: Spanish, 3: Other, 0: NA or blank
@@ -60,7 +60,7 @@ build_data_person=function(pums, parent_unit, child_unit){
                          ifelse(LANGUAGE==0,0,1)*
                            ifelse(LANGUAGE==01,1,
                                   ifelse(LANGUAGE==12,2,3))))
-  
+
   # English proficiency #
   cat('...English proficiency','\n')
   # 1: speaks only English, 2: speaks English "very well",
@@ -69,12 +69,12 @@ build_data_person=function(pums, parent_unit, child_unit){
                              ifelse(SPEAKENG==0,0,1)*
                                ifelse(SPEAKENG==3,1,
                                       ifelse(SPEAKENG==4,2,3))))
-  
+
   pums$householdr=factor(ifelse(pums$GQ<3,1,0)) # households (vs. group quarters)
   pums$nfamr=with(pums,ifelse(FAMSIZE==1 | (FAMSIZE>=2 & NCOUPLES>=1 & MARST>=3 & NCHILD==0),1,0))
   # pums$aloner=factor(ifelse(pums$FAMSIZE==1,1,0)) # lives alone
   # pums$kidsr=factor(ifelse(pums$NCHILD>=1,1,0)) # has children
-  
+
   # household marital status #
   cat('...Household marital status','\n')
   # ### ORIGINAL ###
@@ -95,9 +95,9 @@ build_data_person=function(pums, parent_unit, child_unit){
     mar_hh=ifelse(head_spouse_present==1,1,0)
     rep(mar_hh,length(sm))
   })))
-  
-  
-  
+
+
+
   # sex of household head #
   cat('...Sex of household head','\n')
   pums$hheadsexr=factor(sapply(pums$SERIAL,function(s){ # by first entry serial no
@@ -118,27 +118,27 @@ build_data_person=function(pums, parent_unit, child_unit){
   #     ssex
   #   }
   # })),labels=sex.labels)
-  
-  
-  
+
+
+
   # relation to head of household
   cat('...relation to head of household','\n')
   pums$relater=factor(ifelse(pums$RELATE<11,1,0))
   # pums$relater=factor(ifelse(pums$RELATE<11 | pums$RELATED==1114,1,0)) # include unmarried partners
-  
+
   # detailed relation to head of household
   cat('...detailed relation to head of household','\n')
   # related=read.csv('data/PUMS_RELATED.csv',stringsAsFactors = F)[,c('code','label')]
   related=read.csv(paste0(data_path, 'PUMS_RELATED.csv'),stringsAsFactors = F)[,c('code','label')]
   # pums$relatedr=factor(related$label[match(pums$RELATED,related$code)])
   pums$relatedr=factor(related$label[match(pums$RELATED,related$code)],levels=related$label[!is.na(related$code)])
-  
+
   # household head #
   cat('...ID head of household','\n')
   # hheadr=factor(ifelse(pums$RELATED==101 & pums$GQ<3,1,0))
   hheadr=factor(ifelse(pums$RELATED==101 & pums$GQ<2,1,0))
-  
-  
+
+
   ## family households
   cat('...id family households','\n')
   # pums$famr=factor(unlist(sapply(unique(pums$SERIAL),function(s){
@@ -146,7 +146,7 @@ build_data_person=function(pums, parent_unit, child_unit){
   #   blah=ifelse(fs[1]>1,1,0)
   #   rep(blah,length(fs))
   # })))
-  
+
   fam=unlist(sapply(unique(pums$SERIAL),function(s){
     fs=pums$FAMSIZE[pums$SERIAL==s][1]
     # If multiple members of the household, discard the head (coded 1)
@@ -157,7 +157,7 @@ build_data_person=function(pums, parent_unit, child_unit){
     }else{
       fr=99
     }
-    
+
     # If some or all other household members are related to head, family household (1)
     # If no other household members are related to head, nonfamily household, not living alone (2)
     # If head is only household member (coded 99), lives alone (3)
@@ -169,7 +169,7 @@ build_data_person=function(pums, parent_unit, child_unit){
       famtype
     }
   }))
-  
+
   # fam=unlist(sapply(unique(pums$SERIAL),function(s){ # alt1, by famunit size
   #   fs=pums$FAMSIZE[pums$SERIAL==s]
   #   if(length(fs)>1){
@@ -178,7 +178,7 @@ build_data_person=function(pums, parent_unit, child_unit){
   #     3
   #   }
   # }))
-  
+
   # # # alt2, all household members
   # # this seems to line up best with published Denver living arrangement ests
   # fam=unlist(sapply(unique(pums$SERIAL),function(s){
@@ -190,10 +190,10 @@ build_data_person=function(pums, parent_unit, child_unit){
   #     3
   #   }
   # }))
-  
+
   fam[pums$GQ>1]=4 # code group quarters pop as 4
   pums$famr=factor(fam)
-  
+
   #### Setup: Build Dummy Variables ####
   cat('Setup: Build Dummy Variables','\n')
   pums.sexr=with(pums,model.matrix(~sexr-1)) # sex
@@ -213,9 +213,9 @@ build_data_person=function(pums, parent_unit, child_unit){
   pums.hheadsexr=with(pums,model.matrix(~hheadsexr-1)) # sex, head of household
   pums.relater=with(pums,model.matrix(~relater-1)) # related to head of household
   pums.relatedr=with(pums,model.matrix(~relatedr-1)) # detailed role in household
-  
+
   ## build variables to match summary levels
-  
+
   #### B01001: Sex by Age ####
   cat('B01001: Sex by Age','\n')
   pums.b01001 <- cbind(rowSums(pums.sexr),
@@ -225,19 +225,19 @@ build_data_person=function(pums, parent_unit, child_unit){
                        pums.ager*pums.sexr[,2])
   # colnames(pums.b01001)=rip.metadata.from.census.reporter('B01001')$codes
   colnames(pums.b01001)=paste0('B01001',sprintf('%03d',1:ncol(pums.b01001)))
-  
+
   # #### B02001: Race ####
   # cat('B02001: Race','\n')
   # pums.b02001=cbind(rowSums(pums.racer),pums.racer)
   # # colnames(pums.b02001)=rip.metadata.from.census.reporter('B02001')$codes
   # colnames(pums.b02001)=paste0('B02001',sprintf('%03d',1:ncol(pums.b02001)))
-  # 
+  #
   # # consolidate 'two or more races' levels
   # pums.b02001[,which(colnames(pums.b02001)=='B02001008')]=
   #   rowSums(pums.b02001[,which(colnames(pums.b02001)=='B02001009')
   #                       :which(colnames(pums.b02001)=='B02001010')])
-  
-  
+
+
   #### B03002: Race by Hispanic/Latino Ethnicity ####
   cat('B03002: Race by Hispanic/Latino Ethnicity','\n')
   pums.b03002=cbind(rowSums(pums.racer),
@@ -247,7 +247,7 @@ build_data_person=function(pums, parent_unit, child_unit){
                     pums.hispanr[,1]*pums.racer)
   # colnames(pums.b03002)=rip.metadata.from.census.reporter('B03002')$codes
   colnames(pums.b03002)=paste0('B03002',sprintf('%03d',1:ncol(pums.b03002)))
-  
+
   # consolidate 'two or more races' levels
   pums.b03002[,which(colnames(pums.b03002)=='B03002009')]=
     rowSums(pums.b03002[,which(colnames(pums.b03002)=='B03002009')
@@ -255,7 +255,7 @@ build_data_person=function(pums, parent_unit, child_unit){
   pums.b03002[,which(colnames(pums.b03002)=='B03002019')]=
     rowSums(pums.b03002[,which(colnames(pums.b03002)=='B03002019')
                         :which(colnames(pums.b03002)=='B03002021')])
-  
+
   #### B17001: Poverty Status by Sex by Age ####
   if(!'bg' %in% c(parent_unit, child_unit)){ # not available at the block group level
     cat('B17001: Poverty Status by Sex by Age','\n')
@@ -273,9 +273,9 @@ build_data_person=function(pums, parent_unit, child_unit){
     # colnames(pums.b17001)=rip.metadata.from.census.reporter('B17001')$codes
     colnames(pums.b17001)=paste0('B17001',sprintf('%03d',1:ncol(pums.b17001)))
   }
-  
+
   #### B17021: Poverty Status of Individuals by Living Arrangement ####
-  
+
   ## familiy households by marital status
   # col1: married vs. other family household
   # col2: other family household by sex of household head by relation to household head
@@ -289,7 +289,7 @@ build_data_person=function(pums, parent_unit, child_unit){
   fam.other.relate.male=fam.other.male*pums.relater[,c(2,1)] # other households ,male head, relatives/nonrelatives
   fam.other.female=fam.other.sexr[,2] # other family households, female householder
   fam.other.relate.female=fam.other.female*pums.relater[,c(2,1)] # other households female head, relatives/nonrelatives
-  
+
   ## nonfamily households by living arrangement
   nfam.other.living.arrangement=rowSums(pums.famr[,-1])
   nfam.hh=rowSums(pums.famr[,2:3]) # this isn't included in data, but used to compute sublevels
@@ -301,7 +301,7 @@ build_data_person=function(pums, parent_unit, child_unit){
   # other.living.arrangement=nfam.other.living.arrangement*pums.householdr[,1] # other living arrangement
   # other.living.arrangement=nfam.other.living.arrangement*pums.famr[,4] # other living arrangement
   other.living.arrangement=nfam.other.living.arrangement-nfam.hh # other living arrangement
-  
+
   # assemble household type without poverty status
   pums.b17021.sub=cbind(fam.hh,
                         fam.married,
@@ -316,7 +316,7 @@ build_data_person=function(pums, parent_unit, child_unit){
                         nfam.alone,
                         nfam.not.alone,
                         other.living.arrangement)
-  
+
   # add poverty status
   # flip pov columns since 'below pov' listed first
   pums.b17021=cbind(rowSums(pums.povr[,1:2]),
@@ -326,7 +326,7 @@ build_data_person=function(pums, parent_unit, child_unit){
                     pums.povr[,1]*pums.b17021.sub)
   # colnames(pums.b17021)=rip.metadata.from.census.reporter('B17021')$codes
   colnames(pums.b17021)=paste0('B17021',sprintf('%03d',1:ncol(pums.b17021)))
-  
+
   #### B17021: Poverty Status of Individuals by Living Arrangement - CONDENSED ####
   # # Ignore 'all relatives/non-relatives',
   # # subcategories of nfam/other living arrangement
@@ -336,11 +336,11 @@ build_data_person=function(pums, parent_unit, child_unit){
   #                    'B17021030','B17021032','B17021033','B17021034','B17021035')
   #
   # pums.b17021=pums.b17021[,!colnames(pums.b17021) %in% pums.b17021.excl]
-  
+
   #### B09019: Household Type (Including Living Alone) by Relationship ####
   # we need to borrow some of the b17021 vars for this one
   in.household=pums.householdr[,2] # in households
-  
+
   ## Family Households
   fam.hh=fam.hh # in family households, placeholder
   # fam.hh.householder=fam.hh*pums.relatedr[,6]
@@ -372,22 +372,22 @@ build_data_person=function(pums, parent_unit, child_unit){
                                        fam.hh.nonrelative.unmarried.partner,
                                        fam.hh.nonrelative.foster.child,
                                        fam.hh.nonrelative.other.nonrelatives))
-  
+
   ## Nonfamily households
   # nfam.hh=rowSums(pums.famr[,2:3])*pums.householdr[,2] # nonfamlily households, placeholder
   nfam.hh=rowSums(pums.famr[,2:3]) # nonfamlily households, placeholder
   # nfam.hh=nfam.hh # nonfamlily households, placeholder
   # nfam.hh.householder=nfam.householder # nonfamily householder, placeholder
   nfam.hh.householder=nfam.hh*pums.hheadr[,2] # nonfamily householder, placeholder
-  
+
   nfam.hh.householder.male=nfam.hh.householder*pums.sexr[,1]
   nfam.hh.householder.male.alone=nfam.hh.householder.male*pums.famr[,3] # nfam.alone from b17021
   nfam.hh.householder.male.not.alone=nfam.hh.householder.male*pums.famr[,2] # nfam.not.alone from b17021
-  
+
   nfam.hh.householder.female=nfam.hh.householder*pums.sexr[,2]
   nfam.hh.householder.female.alone=nfam.hh.householder.female*pums.famr[,3] # nfam.alone from b17021
   nfam.hh.householder.female.not.alone=nfam.hh.householder.female*pums.famr[,2] # nfam.not.alone from b17021
-  
+
   nfam.hh.nonrelative.roomer.boarder=nfam.hh*pums.relatedr[,49]
   nfam.hh.nonrelative.housemate.roommate=nfam.hh*pums.relatedr[,43]
   nfam.hh.nonrelative.unmarried.partner=nfam.hh*pums.relatedr[,42]
@@ -401,7 +401,7 @@ build_data_person=function(pums, parent_unit, child_unit){
                                         nfam.hh.nonrelative.other.nonrelatives))
   # in.group.quarters=pums.householdr[,1]
   in.group.quarters=pums.famr[,4]
-  
+
   pums.b09019=cbind(rowSums(pums.householdr),
                     pums.householdr[,2],
                     fam.hh,
@@ -442,12 +442,12 @@ build_data_person=function(pums, parent_unit, child_unit){
                     in.group.quarters)
   # colnames(pums.b09019)=rip.metadata.from.census.reporter('B09019')$codes
   colnames(pums.b09019)=paste0('B09019',sprintf('%03d',1:ncol(pums.b09019)))
-  
+
   #### B16008: Citizenship Status by Age by Language Spoken at Home and Ability to Speak English ####
   if(!'bg' %in% c(parent_unit, child_unit)){ # not available at the block group level
     cat('B16008: Citizenship Status by Age by Language Spoken at Home and Ability to Speak English','\n\n')
     pop.5yo=rowSums(pums.agecitizenr[,2:3]) # Total, population 5 years and older
-    
+
     # native-born population #
     nat.pop=pums.citizenr[,1]
     nat.pop.5y_17y=nat.pop*pums.agecitizenr[,2]
@@ -466,7 +466,7 @@ build_data_person=function(pums, parent_unit, child_unit){
     nat.pop.18yo_other_langs=nat.pop.18yo*pums.langr[,4]
     nat.pop.18yo_other_langs_speak_english_vwell=nat.pop.18yo_other_langs*pums.speakengr[,3]
     nat.pop.18yo_other_langs_speak_english_less_vwell=nat.pop.18yo_other_langs*pums.speakengr[,4]
-    
+
     # foreign-born population #
     foreign.pop=rowSums(pums.citizenr[,2:3])
     foreign.pop.naturalized=pums.citizenr[,2]
@@ -503,7 +503,7 @@ build_data_person=function(pums, parent_unit, child_unit){
     foreign.pop.non.citizen.18yo_other_langs=foreign.pop.non.citizen.18yo*pums.langr[,4]
     foreign.pop.non.citizen.18yo_other_langs_speak_english_vwell=foreign.pop.non.citizen.18yo_other_langs*pums.speakengr[,3]
     foreign.pop.non.citizen.18yo_other_langs_speak_english_less_vwell=foreign.pop.non.citizen.18yo_other_langs*pums.speakengr[,4]
-    
+
     # assemble data #
     pums.b16008=cbind(pop.5yo,
                       nat.pop,
@@ -561,11 +561,11 @@ build_data_person=function(pums, parent_unit, child_unit){
     # colnames(pums.b16008)=rip.metadata.from.census.reporter('B16008')$codes
     colnames(pums.b16008)=paste0('B16008',sprintf('%03d',1:ncol(pums.b16008)))
   }
-    
+
   # cat('saving outputs','\n')
   # save(list=paste0('pums.',c('b01001','b02001','b03002','b09019','b16008','b17001','b17021')),
   #      file=paste0('data/pums_solver_inputs_',loc,'_',p,'.RData'))
-  
+
   # cbind(pums.b01001,pums.b02001,pums.b03002,pums.b09019,pums.b16008,pums.b17001,pums.b17021)
 
   if(!'bg' %in% c(parent_unit, child_unit)){ # not available at the block group level
@@ -581,60 +581,60 @@ build_data_person=function(pums, parent_unit, child_unit){
 }
 
 build_data_household=function(pums, year){
-  
+
   # options(na.action = 'na.pass') # do not omit na items in model.matrix
-  
+
   #### Setup: Define Breaks ####
   cat('Setup: Define Breaks','\n')
   age.brks.tenure <- c(0,15,25,35,45,55,60,65,75,85,Inf)
   age.brks.hhinc=c(0,25,45,65,Inf)
 
   race.brks=c(-Inf,2,3,4,5,6,7,8,9,Inf)
-  
+
   hhinc.brks=c(0,10,15,20,25,30,35,40,45,50,60,75,100,125,150,200,Inf)
-  
+
   #### Setup: Define Labels ####
   age.tenure.labels<-c(paste(age.brks.tenure[1:9],c(age.brks.tenure[2:10])-1,sep='-'),'85+')
-  
+
   age.hhinc.labels=c(paste(age.brks.hhinc[1:3],c(age.brks.hhinc[2:4])-1,sep='-'),'65+')
-  
+
   hhinc.labels=c(paste0(paste(hhinc.brks[1:15],c(hhinc.brks[2:16])-0.1,sep='-'),'k'),'200k+')
 
   race.labels<-c('White', 'Black or African American','American Indian and Alaska Native',
                  'Asian','Native Hawaiian and Other Pacific Islander','Some other race',
                  'Two or more races','Two races including Some other race',
                  'Two races excluding Some other race, and three or more races')
-  
+
   sex.labels<-c("Male","Female")
-  
+
   #### Setup: Reclassify Variables ####
   cat('Setup: Reclassify Variables','\n')
-  
+
   ## age levels for household income
   pums$agehhincr <-cut(as.numeric(pums$AGE),breaks=age.brks.hhinc, include.lowest=TRUE, right=FALSE,labels=age.hhinc.labels)
-  
+
   ## household income
   # safeguard - treat negative income as 0 income
   HHINCOME.safe = pums$HHINCOME
   HHINCOME.safe[HHINCOME.safe < 0] = 0
-  
+
   # pums$hhincr<-cut(as.numeric(pums$HHINCOME),breaks=(1000*hhinc.brks), include.lowest=TRUE, right=FALSE,labels=hhinc.labels)
   pums$hhincr<-cut(as.numeric(HHINCOME.safe),breaks=(1000*hhinc.brks), include.lowest=TRUE, right=FALSE,labels=hhinc.labels)
-  
-  ## age levels for tenure 
+
+  ## age levels for tenure
   pums$agetenr <-cut(as.numeric(pums$AGE),breaks=age.brks.tenure, include.lowest=TRUE, right=FALSE,labels=age.tenure.labels)
-  
+
   ## race/ethnicity
   pums$racer <- cut(pums$RACE, breaks=race.brks, labels=race.labels,inclue.lowest=TRUE,right=FALSE)
   pums$hispanr=factor(ifelse(pums$HISPAN>0,'Hispanic/Latino','Not Hispanic/Latino'))
-  
+
   ## sex
   pums$sexr <- factor(pums[['SEX']], 1:2, labels=sex.labels)
-  
+
   ## tenure
   pums$tenr = factor(with(pums, ifelse(OWNERSHP==1, 'Own', 'Rent')))
-  
-  ## living arrangement 
+
+  ## living arrangement
   pums$famr=unlist(sapply(unique(pums$SERIAL),function(s){
     fs=pums$FAMSIZE[pums$SERIAL==s][1]
     # If multiple members of the household, discard the head (coded 1)
@@ -645,7 +645,7 @@ build_data_household=function(pums, year){
     }else{
       fr=99
     }
-    
+
     # If some or all other household members are related to head, family household (1)
     # If no other household members are related to head, nonfamily household, not living alone (2)
     # If head is only household member (coded 99), lives alone (3)
@@ -657,10 +657,10 @@ build_data_household=function(pums, year){
       famtype
     }
   }))
-  
+
   pums$famr = factor(with(pums,ifelse(famr==1,'fam',
                                      ifelse(famr==2,'nfam_not_alone','nfam_alone'))))
-  
+
   # household marital status #
   cat('...Household marital status','\n')
   pums$marstr=factor(unlist(sapply(unique(pums$SERIAL),function(s){
@@ -669,7 +669,7 @@ build_data_household=function(pums, year){
     mar_hh=ifelse(head_spouse_present==1,1,0)
     rep(mar_hh,length(sm))
   })))
-  
+
   ## presence of household members under 18
   pums$minr = factor(unlist(sapply(unique(pums$SERIAL), function(s){
     as = pums$AGE[pums$SERIAL == s]
@@ -683,59 +683,59 @@ build_data_household=function(pums, year){
     elders = ifelse(any(as>=60),1,0)
     rep(elders,length(as))
   })))
-  
+
   ## household size
   hhsize_by_serial = plyr::count(pums, 'SERIAL')
   pums$hhsizr = with(hhsize_by_serial, freq[match(pums$SERIAL, SERIAL)])
   pums$hhsizr = factor(ifelse(pums$hhsizr >= 7, '7+', pums$hhsizr),
-                       levels=c(as.character(seq(1, 6, by = 1)), '7+'))  
-  
+                       levels=c(as.character(seq(1, 6, by = 1)), '7+'))
+
   ## units in structure
   units_key = read.csv(paste0(data_path, 'PUMS_UNITSSTR.csv'))
   pums$unitsr = factor(units_key$label[match(pums$UNITSSTR,units_key$code)], levels = units_key$label)
-      
+
   ## year built
   built_key = read.csv(paste0(data_path, 'PUMS_BUILTYR2.csv'))
   pums$builtr = factor(built_key$label[match(pums$BUILTYR2,built_key$code)], levels = unique(built_key$label))
-  
+
   #### Subset Householders ####
   cat('Subset by Household Head','\n')
-  
-  ## id head of household 
+
+  ## id head of household
   hheadr=ifelse(pums$RELATED==101,1,0)
   pums = pums[hheadr == 1,]
-  
+
   #### Setup: Build Dummy Variables ####
   cat('Setup: Build Dummy Variables','\n')
-  
+
   pums.sexr=with(pums,model.matrix(~sexr-1)) # sex (head of household)
-  pums.famr=with(pums,model.matrix(~famr-1)) # family type/living arrangement 
+  pums.famr=with(pums,model.matrix(~famr-1)) # family type/living arrangement
   pums.marstr=with(pums,model.matrix(~marstr-1)) # spouse present
   pums.minr=with(pums,model.matrix(~minr-1)) # household members <18
   pums.eldr=with(pums,model.matrix(~eldr-1)) # household members 60+
-  
-  pums.hhsizr = with(pums, model.matrix(~hhsizr - 1)) # household size 
-  
+
+  pums.hhsizr = with(pums, model.matrix(~hhsizr - 1)) # household size
+
   pums.agehhincr = with(pums, model.matrix(~agehhincr - 1)) # age (income categories)
   pums.hhincr = with(pums, model.matrix(~hhincr - 1)) # household income
 
-  
+
   pums.agetenr=with(pums,model.matrix(~agetenr-1)) # age (tenure categories)
-  pums.tenr=with(pums,model.matrix(~tenr-1)) # tenure 
+  pums.tenr=with(pums,model.matrix(~tenr-1)) # tenure
   pums.unitsr=with(pums,model.matrix(~unitsr-1)) # units in structure
   pums.builtr=with(pums,model.matrix(~builtr-1)) # year built
-  
+
   pums.racer=with(pums,model.matrix(~racer-1)) # race
   pums.hispanr=with(pums,model.matrix(~hispanr-1)) # hispanic/latino ethnicity
-  
+
   # options(na.action = 'na.omit') # reset the global na action
-  
+
   #### B11005: Households by Presence of People Under 18 Years By Household Type ####
   cat('B11005: Households by Presence of People Under 18 Years By Household Type','\n')
-  
+
   hh = rep(1, nrow(pums)) # Total 001
   hh.w.under.18 = pums.minr[,2] # households with one or more person under 18 002
-  hh.w.under.18.fam = hh.w.under.18 * pums.famr[,1] 
+  hh.w.under.18.fam = hh.w.under.18 * pums.famr[,1]
   hh.w.under.18.fam.married = hh.w.under.18.fam * pums.marstr[,2]
   hh.w.under.18.fam.other = hh.w.under.18.fam * pums.marstr[,1]
   hh.w.under.18.fam.other.male.no.wife.present = hh.w.under.18.fam.other * pums.sexr[,1]
@@ -744,7 +744,7 @@ build_data_household=function(pums, year){
   hh.w.under.18.nfam.male = hh.w.under.18.nfam * pums.sexr[,1]
   hh.w.under.18.nfam.female = hh.w.under.18.nfam * pums.sexr[,2]
   hh.no.under.18 = pums.minr[,1] # households with no people under 18 011
-  hh.no.under.18.fam = hh.no.under.18 * pums.famr[,1] 
+  hh.no.under.18.fam = hh.no.under.18 * pums.famr[,1]
   hh.no.under.18.fam.married = hh.no.under.18.fam * pums.marstr[,2]
   hh.no.under.18.fam.other = hh.no.under.18.fam * pums.marstr[,1]
   hh.no.under.18.fam.other.male.no.wife.present = hh.no.under.18.fam.other * pums.sexr[,1]
@@ -752,7 +752,7 @@ build_data_household=function(pums, year){
   hh.no.under.18.nfam = hh.no.under.18 * rowSums(pums.famr[,2:3])
   hh.no.under.18.nfam.male = hh.no.under.18.nfam * pums.sexr[,1]
   hh.no.under.18.nfam.female = hh.no.under.18.nfam * pums.sexr[,2]
-  
+
   pums.b11005 = cbind(hh,
                       hh.w.under.18,
                       hh.w.under.18.fam,
@@ -772,28 +772,28 @@ build_data_household=function(pums, year){
                       hh.no.under.18.nfam,
                       hh.no.under.18.nfam.male,
                       hh.no.under.18.nfam.female)
-  
+
   colnames(pums.b11005)=paste0('B11005',sprintf('%03d',1:ncol(pums.b11005)))
-  
+
   #### B11006: Households by Presence of People 60 Years or Older By Household Type ####
   cat('B11006: Households by Presence of People 60 Years or Older By Household Type','\n')
-  
+
   hh = rep(1, nrow(pums)) # Total 001
   hh.w.60.over = pums.eldr[,2] # households with one or more person 60 or over 002
-  hh.w.60.over.fam = hh.w.60.over * pums.famr[,1] 
+  hh.w.60.over.fam = hh.w.60.over * pums.famr[,1]
   hh.w.60.over.fam.married = hh.w.60.over.fam * pums.marstr[,2]
   hh.w.60.over.fam.other = hh.w.60.over.fam * pums.marstr[,1]
   hh.w.60.over.fam.other.male.no.wife.present = hh.w.60.over.fam.other * pums.sexr[,1]
   hh.w.60.over.fam.other.female.no.husband.present = hh.w.60.over.fam.other * pums.sexr[,2]
   hh.w.60.over.nfam = hh.w.60.over * rowSums(pums.famr[,2:3])
   hh.no.60.over = pums.eldr[,1] # households with no people 60 or over 009
-  hh.no.60.over.fam = hh.no.60.over * pums.famr[,1] 
+  hh.no.60.over.fam = hh.no.60.over * pums.famr[,1]
   hh.no.60.over.fam.married = hh.no.60.over.fam * pums.marstr[,2]
   hh.no.60.over.fam.other = hh.no.60.over.fam * pums.marstr[,1]
   hh.no.60.over.fam.other.male.no.wife.present = hh.no.60.over.fam.other * pums.sexr[,1]
   hh.no.60.over.fam.other.female.no.husband.present = hh.no.60.over.fam.other * pums.sexr[,2]
   hh.no.60.over.nfam = hh.no.60.over * rowSums(pums.famr[,2:3])
-  
+
   pums.b11006 = cbind(hh,
                       hh.w.60.over,
                       hh.w.60.over.fam,
@@ -809,19 +809,19 @@ build_data_household=function(pums, year){
                       hh.no.60.over.fam.other.male.no.wife.present,
                       hh.no.60.over.fam.other.female.no.husband.present,
                       hh.no.60.over.nfam)
-  
+
   colnames(pums.b11006)=paste0('B11006',sprintf('%03d',1:ncol(pums.b11006)))
-  
+
   #### B11012: Household Type by Tenure ####
   cat('B11012: Household Type by Tenure','\n')
-  
+
   hh = rep(1, nrow(pums)) # Total 001
   hh.fam = pums.famr[,1] # family households 002
   hh.fam.married = hh.fam * pums.marstr[,2] # married couple households 003
   hh.fam.married.own = hh.fam.married * pums.tenr[,1]
   hh.fam.married.rent = hh.fam.married * pums.tenr[,2]
   hh.fam.other = hh.fam * pums.marstr[,1] # other family households 006
-  hh.fam.other.male.no.wife.present = hh.fam.other * pums.sexr[,1] # male head, no wife present 007 
+  hh.fam.other.male.no.wife.present = hh.fam.other * pums.sexr[,1] # male head, no wife present 007
   hh.fam.other.male.no.wife.present.own = hh.fam.other.male.no.wife.present * pums.tenr[,1]
   hh.fam.other.male.no.wife.present.rent = hh.fam.other.male.no.wife.present * pums.tenr[,2]
   hh.fam.other.female.no.husband.present = hh.fam.other * pums.sexr[,2] # female head, no husband present 010
@@ -830,7 +830,7 @@ build_data_household=function(pums, year){
   hh.nfam = rowSums(pums.famr[,-1]) # nonfamily households 013
   hh.nfam.own = hh.nfam * pums.tenr[,1]
   hh.nfam.rent = hh.nfam * pums.tenr[,2]
-  
+
   pums.b11012 = cbind(hh,
                       hh.fam,
                       hh.fam.married,
@@ -846,12 +846,12 @@ build_data_household=function(pums, year){
                       hh.nfam,
                       hh.nfam.own,
                       hh.nfam.rent)
-  
+
   colnames(pums.b11012)=paste0('B11012',sprintf('%03d',1:ncol(pums.b11012)))
-  
+
   #### B11016: Household Type by Household Size ####
   cat('B11016: Household Type by Household Size','\n')
-  
+
   hh = rep(1, nrow(pums)) # Total 001
   hh.fam = pums.famr[,1] # family households 002
   hh.fam.p2 = hh.fam * pums.hhsizr[,2]
@@ -868,8 +868,8 @@ build_data_household=function(pums, year){
   hh.nfam.p5 = hh.nfam * pums.hhsizr[,5]
   hh.nfam.p6 = hh.nfam * pums.hhsizr[,6]
   hh.nfam.p7.or.more = hh.nfam * pums.hhsizr[,7]
-  
-  pums.b11016 = cbind(hh, 
+
+  pums.b11016 = cbind(hh,
                       hh.fam,
                       hh.fam.p2,
                       hh.fam.p3,
@@ -885,12 +885,12 @@ build_data_household=function(pums, year){
                       hh.nfam.p5,
                       hh.nfam.p6,
                       hh.nfam.p7.or.more)
-  
+
   colnames(pums.b11016)=paste0('B11016',sprintf('%03d',1:ncol(pums.b11016)))
-  
+
   #### B19037: Age of Householder By Household Income in the Past 12 Months ####
   cat('B19037: Age of Householder By Household Income in the Past 12 Months','\n')
-  
+
   hh = rep(1, nrow(pums)) # Total 001
   hh.under.25 = pums.agehhincr[,1] # Householder under 25 years 002
   hh.under.25.less.than.10k = hh.under.25 * pums.hhincr[,1]
@@ -960,7 +960,7 @@ build_data_household=function(pums, year){
   hh.65.over.125k.149k = hh.65.over * pums.hhincr[,14]
   hh.65.over.150k.199k = hh.65.over * pums.hhincr[,15]
   hh.65.over.200k.more = hh.65.over * pums.hhincr[,16]
-  
+
   pums.b19037 = cbind(hh,
                       hh.under.25,
                       hh.under.25.less.than.10k,
@@ -1030,12 +1030,12 @@ build_data_household=function(pums, year){
                       hh.65.over.125k.149k,
                       hh.65.over.150k.199k,
                       hh.65.over.200k.more)
-  
+
   colnames(pums.b19037)=paste0('B19037',sprintf('%03d',1:ncol(pums.b19037)))
-  
+
   #### B25003: Tenure by Race/Ethnicity of Householder ####
   cat('B25003: Tenure by Race/Ethnicity of Householder','\n')
-  
+
   occ.hu = rep(1, nrow(pums)) # Total 001
   white.occ.hu = pums.racer[,1] # householder who is White alone A001
   white.occ.hu.own = white.occ.hu * pums.tenr[,1]
@@ -1064,7 +1064,7 @@ build_data_household=function(pums, year){
   hisp.occ.hu = pums.hispanr[,1] # householder who is Hispanic/Latino I001
   hisp.occ.hu.own = hisp.occ.hu * pums.tenr[,1]
   hisp.occ.hu.rent = hisp.occ.hu * pums.tenr[,2]
-  
+
   pums.b25003 = cbind(white.occ.hu,
                       white.occ.hu.own,
                       white.occ.hu.rent,
@@ -1092,23 +1092,23 @@ build_data_household=function(pums, year){
                       hisp.occ.hu,
                       hisp.occ.hu.own,
                       hisp.occ.hu.rent)
-  
+
   # generate column names
   names.b25003 = as.vector(sapply(toupper(letters[1:9]),function(i){
-    
+
     sub_name = unname(paste0('B25003',i))
-    
+
     sapply(1:3, function(j){
       paste0(sub_name,sprintf('%03d',j))
     })
-    
+
   }))
-  
+
   colnames(pums.b25003) = names.b25003
-  
+
   #### B25007: Tenure by Age of Householder ####
   cat('B25007: Tenure by Age of Householder','\n')
-  
+
   occ.hu = rep(1, nrow(pums)) # Total 001
   occ.hu.own = pums.tenr[,1] # Owner occupied 002
   occ.hu.own.15.24 = occ.hu.own * pums.agetenr[,2]
@@ -1130,7 +1130,7 @@ build_data_household=function(pums, year){
   occ.hu.rent.65.74 = occ.hu.rent * pums.agetenr[,8]
   occ.hu.rent.75.84 = occ.hu.rent * pums.agetenr[,9]
   occ.hu.rent.85o = occ.hu.rent * pums.agetenr[,10]
-  
+
   pums.b25007 = cbind(occ.hu,
                       occ.hu.own,
                       occ.hu.own.15.24,
@@ -1152,12 +1152,12 @@ build_data_household=function(pums, year){
                       occ.hu.rent.65.74,
                       occ.hu.rent.75.84,
                       occ.hu.rent.85o)
-  
+
   colnames(pums.b25007)=paste0('B25007',sprintf('%03d',1:ncol(pums.b25007)))
-  
+
   #### B25032: Tenure by Units in Structure ####
   cat('B25032: Tenure by Units in Structure','\n')
-  
+
   occ.hu = rep(1, nrow(pums)) # Total 001
   occ.hu.own = pums.tenr[,1] # Owner occupied 002
   occ.hu.own.u1.detached = occ.hu.own * pums.unitsr[,3]
@@ -1181,7 +1181,7 @@ build_data_household=function(pums, year){
   occ.hu.rent.u50.more = occ.hu.rent * pums.unitsr[,10]
   occ.hu.rent.mobile.home = occ.hu.rent * pums.unitsr[,1]
   occ.hu.rent.boat.rv.van.etc = occ.hu.rent * pums.unitsr[,2]
-  
+
   pums.b25032 = cbind(occ.hu,
                       occ.hu.own,
                       occ.hu.own.u1.detached,
@@ -1205,12 +1205,12 @@ build_data_household=function(pums, year){
                       occ.hu.rent.u50.more,
                       occ.hu.rent.mobile.home,
                       occ.hu.rent.boat.rv.van.etc)
-  
+
   colnames(pums.b25032)=paste0('B25032',sprintf('%03d',1:ncol(pums.b25032)))
-  
+
   #### B25036: Tenure by Year Structure Built ####
   cat('B25036: Tenure by Year Structure Built','\n')
-  
+
   occ.hu = rep(1, nrow(pums)) # Total 001
   occ.hu.own = pums.tenr[,1] # Owner occupied 002
   occ.hu.own.built.2010.later = occ.hu.own * pums.builtr[,10]
@@ -1232,7 +1232,7 @@ build_data_household=function(pums, year){
   occ.hu.rent.built.1950.1959 = occ.hu.rent * pums.builtr[,3]
   occ.hu.rent.built.1940.1949 = occ.hu.rent * pums.builtr[,2]
   occ.hu.rent.built.1939.earlier = occ.hu.rent * pums.builtr[,1]
-  
+
   pums.b25036 = cbind(occ.hu,
                       occ.hu.own,
                       occ.hu.own.built.2010.later,
@@ -1254,13 +1254,13 @@ build_data_household=function(pums, year){
                       occ.hu.rent.built.1950.1959,
                       occ.hu.rent.built.1940.1949,
                       occ.hu.rent.built.1939.earlier)
-  
+
   colnames(pums.b25036)=paste0('B25036',sprintf('%03d',1:ncol(pums.b25036)))
-  
+
   # options(na.action = 'na.omit') # reset the global na action
-  
+
   list(pums = pums,
        pums_in = cbind(pums.b11005,pums.b11006,pums.b11012,pums.b11016,pums.b19037,
                        pums.b25003,pums.b25007,pums.b25032,pums.b25036))
-  
+
 }
