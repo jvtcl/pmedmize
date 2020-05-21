@@ -1,5 +1,6 @@
 # setwd('../')
 source('code/pmedm.R')
+source('code/constraints.R')
 
 #### PUMS constraints ####
 tp <- '00803'
@@ -14,35 +15,7 @@ cid <- unique(substr(schema$code, 1, 6)) # constraint table IDs
 
 source('code/intermediates.R')
 source('code/build_constraints_ind.R')
-ctable <- lapply(cid, function(v){
-
-  do.call(v, args = list(pums = ipums))
-
-})
-ctable <- do.call(cbind, ctable)
-
-# apply(ctable, 2, table) # check
-
-## build constraints according to schema
-library(matrixStats)
-sc <- unique(schema$constraint)
-pmedm_constraints_ind <- lapply(sc, function(x){
-
-  xc <- schema$code[schema$constraint == x]
-
-  cout <- ctable[,xc]
-
-  if(length(xc) > 1){
-
-    cout <- ifelse(rowSums(cout) >= 1, 1, 0)
-
-  }
-
-  cout
-
-})
-names(pmedm_constraints_ind) <- sc
-pmedm_constraints_ind <- do.call(cbind, pmedm_constraints_ind)
+pmedm_constraints_ind <- prepare_constraints_ind(schema)
 
 # check
 apply(pmedm_constraints_ind, 2, function(x){
@@ -94,30 +67,8 @@ puma_lookup <- puma_lookup[puma_lookup$PUMA5CE %in% tp,]
 constraints_trt <- constraints_trt[constraints_trt$GEOID %in% puma_lookup$trt_id,]
 constraints_bg <- constraints_bg[substr(constraints_bg$GEOID, 1, 11) %in% constraints_trt$GEOID,]
 
-pmedm_constraints_geo <- function(dat, schema){
-
-  sc <- unique(schema$constraint)
-
-  pmedm_constraints_geo <- lapply(sc, function(x){
-    # print(x)
-    xc <- schema$code[schema$constraint == x]
-    cout <- dat[,xc]
-    se.cout <- dat[,paste0(xc, 's')]
-    if(length(xc) > 1){
-      cout <- rowSums(cout)
-      se.cout <- sqrt(rowSums(se.cout^2))
-    }
-    cout <- cbind(cout, se.cout)
-    colnames(cout) <- c(x, paste0(x, 's'))
-    cout
-
-  })
-  data.frame(GEOID = dat[,1], do.call(cbind, pmedm_constraints_geo))
-
-}
-
-pmedm_constraints_bg <- pmedm_constraints_geo(constraints_bg, schema)
-pmedm_constraints_trt <- pmedm_constraints_geo(constraints_trt, schema)
+pmedm_constraints_bg <- prepare_constraints_geo(constraints_bg, schema)
+pmedm_constraints_trt <- prepare_constraints_geo(constraints_trt, schema)
 
 # exclude areas with zero pop (i.e., open water)
 pmedm_constraints_bg <- pmedm_constraints_bg[pmedm_constraints_bg[,2] > 0,]
@@ -158,21 +109,24 @@ toc()
 ## estimated P-MEDM allocation probabilities
 wm <- with(res, wt_matrix / N)
 
-## replicate allocation probabilities
-rep_wm <- pmedm_replicate_probabilities(res, rep_lambda)
+## synthetic population estimate
+syp <- with(res, wt_matrix / N)
+
+## replicate synthetic pop estimates
+rep_syp <- pmedm_replicate_probabilities(res, rep_lambda)
 
 ## example segment
-# s <- rowProds(res$pums_in[,c('HH.MINR', 'HH.INCOME.L50K', 'TENR.RENT')])
-s <- rowProds(res$pums_in[,c('AGE.GE65', 'LIVING.ALONE', 'UNITS.GE10.RENT')])
+s <- rowProds(res$pums_in[,c('HH.MINR', 'HH.INCOME.L50K', 'TENR.RENT')])
+# s <- rowProds(res$pums_in[,c('AGE.GE65', 'LIVING.ALONE', 'UNITS.GE10')])
 
 ## P-MEDM estimates of segment
-est <- colSums(s * wm * res$N) / colSums(wm * res$N)
+est <- colSums(s * syp * res$N) / colSums(syp * res$N)
 
 ## replicate estimates of segment
-rep_est <- lapply(rep_wm, function(r){
-
+rep_est <- lapply(rep_syp, function(r){
+  
   colSums(s * r * res$N) / colSums(r * res$N)
-
+  
 })
 rep_est <- do.call(cbind, rep_est)
 
@@ -189,16 +143,17 @@ plot(mcv ~ est, pch = 16, xlab = 'Prevalence', ylab = 'Monte Carlo CV')
 ## map results
 library(sf)
 locs <- colnames(res$wt_matrix)
-# locs <- locs[!locs == '080130123001'] # exclude CU block group (very low non-GQ pop)
 
 if(!dir.exists('temp')){
   dir.create('temp')
 }
 
-download.file('https://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_08_bg_500k.zip',
-              destfile = 'temp/co_bg.zip')
-unzip(zipfile = 'temp/co_bg.zip', exdir = 'temp')
-file.remove('temp/co_bg.zip')
+if(!file.exists('temp/cb_2016_08_bg_500k.shp')){
+  download.file('https://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_08_bg_500k.zip',
+                destfile = 'temp/co_bg.zip')
+  unzip(zipfile = 'temp/co_bg.zip', exdir = 'temp')
+  file.remove('temp/co_bg.zip')
+}
 
 bg <- read_sf('temp', 'cb_2016_08_bg_500k')
 bg <- bg[match(locs, bg$GEOID),]
@@ -206,19 +161,16 @@ bg <- bg[match(locs, bg$GEOID),]
 bg['est'] <- est
 bg['mcv'] <- mcv
 
-# plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
-# plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') 
-# plot(bg[c('est', 'mcv')], lwd = 0.25)
-
 bg_cent <- st_centroid(bg)
+
+bg$mcv[bg$est < 0.001] <- NA # omit ests less than 0.1% of pop
 
 library(ggplot2)
 ggplot() +
   geom_sf(data = bg, aes(fill = mcv, size = est)) +
   geom_sf(data = bg_cent, aes(size = est), alpha = 0.75) +
-  scale_fill_gradient2(low = 'dodgerblue3', mid = 'lightyellow', high = 'indianred4',
+  scale_fill_gradient2(low = 'springgreen4', mid = 'lightyellow', high = 'red3',
                        midpoint = 0.3, limits = c(0, 1), na.value = 'snow') +
-  # scale_alpha_continuous(range = c(0, 1), limits = c(0, max(bg$est))) +
   scale_size_continuous(range = c(0, 1.5), limits = c(0, max(bg$est))) +
   theme_void() + 
   labs(size = 'Proportional \nEstimate', fill = 'Monte Carlo\nCV')
