@@ -47,7 +47,7 @@ apply(pmedm_constraints_ind, 2, function(x){
 #### summary level constraints ####
 ### Build data
 ## functions for parsing tables from Census API
-source('code/build_pmedm_constraints.R')
+source('code/build_constraints_geo.R')
 
 # ## set a system environment variable for the API key
 #' ```

@@ -86,18 +86,18 @@ UNITS.GE10,B25032021,Multi-Unit Dwelling with 10 or more Units
 UNITS.GE10.RENT,B25032019,"Multi-Unit Dwelling with 10 or more Units, Renter-Occupied"
 UNITS.GE10.RENT,B25032020,"Multi-Unit Dwelling with 10 or more Units, Renter-Occupied"
 UNITS.GE10.RENT,B25032021,"Multi-Unit Dwelling with 10 or more Units, Renter-Occupied"
+BUILT.PRE80,B25036007,Dwelling Built before 1980
 BUILT.PRE80,B25036008,Dwelling Built before 1980
 BUILT.PRE80,B25036009,Dwelling Built before 1980
 BUILT.PRE80,B25036010,Dwelling Built before 1980
 BUILT.PRE80,B25036011,Dwelling Built before 1980
-BUILT.PRE80,B25036012,Dwelling Built before 1980
+BUILT.PRE80,B25036017,Dwelling Built before 1980
+BUILT.PRE80,B25036018,Dwelling Built before 1980
 BUILT.PRE80,B25036019,Dwelling Built before 1980
 BUILT.PRE80,B25036020,Dwelling Built before 1980
 BUILT.PRE80,B25036021,Dwelling Built before 1980
-BUILT.PRE80,B25036022,Dwelling Built before 1980
-BUILT.PRE80,B25036023,Dwelling Built before 1980
+BUILT.PRE80.RENT,B25036017,"Dwelling Built before 1980, Renter-Occupied Unit"
+BUILT.PRE80.RENT,B25036018,"Dwelling Built before 1980, Renter-Occupied Unit"
 BUILT.PRE80.RENT,B25036019,"Dwelling Built before 1980, Renter-Occupied Unit"
 BUILT.PRE80.RENT,B25036020,"Dwelling Built before 1980, Renter-Occupied Unit"
 BUILT.PRE80.RENT,B25036021,"Dwelling Built before 1980, Renter-Occupied Unit"
-BUILT.PRE80.RENT,B25036022,"Dwelling Built before 1980, Renter-Occupied Unit"
-BUILT.PRE80.RENT,B25036023,"Dwelling Built before 1980, Renter-Occupied Unit"

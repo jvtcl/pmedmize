@@ -1,3 +1,7 @@
+"
+Builds P-MEDM constraints from the ACS Summary File using the Census API.
+"
+
 library(censusapi)
 
 get_table = function(v, table, key, name, year, level, geo){

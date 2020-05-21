@@ -8,16 +8,16 @@ ipums <- ipums[ipums$PUMA == as.numeric(tp),]
 
 ## Generate tables for building constraints
 schema <- read.csv('data/example_constraints_household.csv', stringsAsFactors = F)
-schema <- schema[!startsWith(schema$constraint, 'BUILT.'),] # test
+# schema <- schema[!startsWith(schema$constraint, 'BUILT.'),] # test
 
 cid <- unique(substr(schema$code, 1, 6)) # constraint table IDs
 
 source('code/intermediates.R')
 source('code/build_constraints_ind.R')
 ctable <- lapply(cid, function(v){
-  
+
   do.call(v, args = list(pums = ipums))
-  
+
 })
 ctable <- do.call(cbind, ctable)
 
@@ -27,12 +27,17 @@ ctable <- do.call(cbind, ctable)
 library(matrixStats)
 sc <- unique(schema$constraint)
 pmedm_constraints_ind <- lapply(sc, function(x){
-  # print(x)
+
   xc <- schema$code[schema$constraint == x]
+
   cout <- ctable[,xc]
+
   if(length(xc) > 1){
+
     cout <- ifelse(rowSums(cout) >= 1, 1, 0)
+
   }
+
   cout
 
 })
@@ -47,7 +52,7 @@ apply(pmedm_constraints_ind, 2, function(x){
 #### summary level constraints ####
 ### Build data
 ## functions for parsing tables from Census API
-source('code/build_pmedm_constraints.R')
+source('code/build_constraints_geo.R')
 
 # ## set a system environment variable for the API key
 #' ```
@@ -205,3 +210,10 @@ plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
 plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') 
 
 plot(bg[c('est', 'mcv')], lwd = 0.25)
+
+# library(ggplot2)
+# ggplot() +
+#   geom_sf(data = bg, aes(fill = mcv, alpha = est)) +
+#   scale_fill_gradient2(low = 'dodgerblue3', mid = 'lightyellow', high = 'indianred4') + 
+#   scale_alpha_continuous(limits = c(0, max(bg$est))) + 
+#   theme_void()
