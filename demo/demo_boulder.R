@@ -194,7 +194,15 @@ bg <- bg[match(locs, bg$GEOID),]
 bg['est'] <- est
 bg['mcv'] <- mcv
 
-plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
-plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') 
+bg_cent <- st_centroid(bg)
 
-plot(bg[c('est', 'mcv')], lwd = 0.25)
+library(ggplot2)
+ggplot() +
+  geom_sf(data = bg, aes(fill = mcv, size = est)) +
+  geom_sf(data = bg_cent, aes(size = est), alpha = 0.75) +
+  scale_fill_gradient2(low = 'dodgerblue3', mid = 'lightyellow', high = 'indianred4',
+                       midpoint = 0.3, limits = c(0, 1), na.value = 'snow') +
+  # scale_alpha_continuous(range = c(0, 1), limits = c(0, max(bg$est))) +
+  scale_size_continuous(range = c(0, 1.5), limits = c(0, max(bg$est))) +
+  theme_void() + 
+  labs(size = 'Proportional \nEstimate', fill = 'Monte Carlo\nCV')

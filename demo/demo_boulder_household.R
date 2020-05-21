@@ -162,8 +162,8 @@ wm <- with(res, wt_matrix / N)
 rep_wm <- pmedm_replicate_probabilities(res, rep_lambda)
 
 ## example segment
-s <- rowProds(res$pums_in[,c('HH.MINR', 'HH.INCOME.L50K', 'TENR.RENT')])
-# s <- rowProds(res$pums_in[,c('AGE.GE65', 'LIVING.ALONE', 'UNITS.GE10.RENT')])
+# s <- rowProds(res$pums_in[,c('HH.MINR', 'HH.INCOME.L50K', 'TENR.RENT')])
+s <- rowProds(res$pums_in[,c('AGE.GE65', 'LIVING.ALONE', 'UNITS.GE10.RENT')])
 
 ## P-MEDM estimates of segment
 est <- colSums(s * wm * res$N) / colSums(wm * res$N)
@@ -206,14 +206,19 @@ bg <- bg[match(locs, bg$GEOID),]
 bg['est'] <- est
 bg['mcv'] <- mcv
 
-plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
-plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') 
+# plot(bg['est'], lwd = 0.25, main = 'Proportional Estimate')
+# plot(bg['mcv'], lwd = 0.25, main = 'Monte Carlo Coefficient of Variation') 
+# plot(bg[c('est', 'mcv')], lwd = 0.25)
 
-plot(bg[c('est', 'mcv')], lwd = 0.25)
+bg_cent <- st_centroid(bg)
 
-# library(ggplot2)
-# ggplot() +
-#   geom_sf(data = bg, aes(fill = mcv, alpha = est)) +
-#   scale_fill_gradient2(low = 'dodgerblue3', mid = 'lightyellow', high = 'indianred4') + 
-#   scale_alpha_continuous(limits = c(0, max(bg$est))) + 
-#   theme_void()
+library(ggplot2)
+ggplot() +
+  geom_sf(data = bg, aes(fill = mcv, size = est)) +
+  geom_sf(data = bg_cent, aes(size = est), alpha = 0.75) +
+  scale_fill_gradient2(low = 'dodgerblue3', mid = 'lightyellow', high = 'indianred4',
+                       midpoint = 0.3, limits = c(0, 1), na.value = 'snow') +
+  # scale_alpha_continuous(range = c(0, 1), limits = c(0, max(bg$est))) +
+  scale_size_continuous(range = c(0, 1.5), limits = c(0, max(bg$est))) +
+  theme_void() + 
+  labs(size = 'Proportional \nEstimate', fill = 'Monte Carlo\nCV')
