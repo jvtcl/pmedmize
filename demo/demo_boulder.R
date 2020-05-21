@@ -152,7 +152,7 @@ wm <- with(res, wt_matrix / N)
 rep_wm <- pmedm_replicate_probabilities(res, rep_lambda)
 
 ## example segment
-s <- rowProds(pmedm_constraints_ind[,c('AGE18U', 'POV')])
+s <- rowProds(res$pums_in[,c('AGE18U', 'POV')])
 
 ## P-MEDM estimates of segment
 est <- colSums(s * wm * res$N) / colSums(wm * res$N)

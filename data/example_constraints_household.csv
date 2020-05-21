@@ -1,4 +1,5 @@
 constraint,code,desc
+HH,B11005001,Population in Households (not Group Quarters or Vacant)
 HH.MINR,B11005002,Minors (Age Under 18) Present
 HH.MINR.FAM,B11005003,"Married-Couple Family, Minors (Age Under 18) Present"
 HH.NFAM,B11005017,Non-Family Household

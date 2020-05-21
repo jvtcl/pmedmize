@@ -137,7 +137,7 @@ toc()
 source('code/reliability.R')
 
 # quick diagnostic - standard allocation error of constraints
-sort(abs(sae(res)), decreasing = T)
+round(sort(abs(sae(res)), decreasing = T), 3)
 mean(abs(sae(res)))
 
 ### Dual Hessian method
@@ -157,7 +157,8 @@ wm <- with(res, wt_matrix / N)
 rep_wm <- pmedm_replicate_probabilities(res, rep_lambda)
 
 ## example segment
-s <- rowProds(pmedm_constraints_ind[,c('AGE18U', 'POV')])
+s <- rowProds(res$pums_in[,c('HH.MINR', 'HH.INCOME.L50K', 'TENR.RENT')])
+# s <- rowProds(res$pums_in[,c('AGE.GE65', 'LIVING.ALONE', 'UNITS.GE10.RENT')])
 
 ## P-MEDM estimates of segment
 est <- colSums(s * wm * res$N) / colSums(wm * res$N)
@@ -183,6 +184,7 @@ plot(mcv ~ est, pch = 16, xlab = 'Prevalence', ylab = 'Monte Carlo CV')
 ## map results
 library(sf)
 locs <- colnames(res$wt_matrix)
+# locs <- locs[!locs == '080130123001'] # exclude CU block group (very low non-GQ pop)
 
 if(!dir.exists('temp')){
   dir.create('temp')
