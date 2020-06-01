@@ -64,6 +64,7 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
     wt <- pums$HHWT
     serial <- pums$SERIAL
   }
+  pums_in <- as.matrix(pums_in)
   pX <- list(drop0(pums_in), drop0(pums_in))
 
   ## Geographies
