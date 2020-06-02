@@ -69,3 +69,38 @@ build_synthetic_pops <- function(pums, alc, uid = NULL, normalize = T){
   dwt
   
 }
+
+aggregate_by_geo <- function(alc, geo_lookup, N = NULL, normalize = T){
+  
+  "
+  Aggregates P-MEDM allocation estimates (probabilities OR counts) based
+  on a geographic lookup table.
+  
+    alc: P-MEDM allocation matrix
+    
+    geo_lookup: Geographic lookup table. Column 1: P-MEDM allocation units,
+    Column 2: Aggregation units.
+    
+    N: Population size. Provide this only if `alc` consists of counts.
+    
+    normalize: whether or not to normalize the synthetic
+      population estimates by each area's total population. Set TRUE
+      only if `alc` consists of counts.
+  "
+  
+  if(!missing(N)){
+    alc <- alc / N
+  }
+  
+  alc <- t(aggregate(t(alc) ~ geo_lookup[,2], FUN = sum)[,-1])
+  colnames(alc) <- unique(geo_lookup[,2])
+  
+  if(normalize){
+    alc <- alc / rowSums(alc)
+  }
+  
+  alc
+  
+}
+
+
