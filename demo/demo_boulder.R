@@ -68,8 +68,8 @@ pmedm_constraints_bg <- prepare_constraints_geo(constraints_bg, schema)
 pmedm_constraints_trt <- prepare_constraints_geo(constraints_trt, schema)
 
 # exclude areas with zero pop (i.e., open water)
-pmedm_constraints_bg <- pmedm_constraints_bg[pmedm_constraints_bg[,2] > 0,]
-pmedm_constraints_trt <- pmedm_constraints_trt[pmedm_constraints_trt[,2] > 0,]
+# pmedm_constraints_bg <- pmedm_constraints_bg[pmedm_constraints_bg[,2] > 0,]
+# pmedm_constraints_trt <- pmedm_constraints_trt[pmedm_constraints_trt[,2] > 0,]
 
 # crosswalk
 geo_lookup <- data.frame(bg = pmedm_constraints_bg$GEOID, trt = substr(pmedm_constraints_bg$GEOID, 1, 11))
@@ -84,6 +84,8 @@ res <- pmedm(pums = ipums,
             geo_lookup = geo_lookup,
             output_minimal = FALSE)
 toc()
+
+# save(res, file = 'data/output/pmedm_bou16_person.RData')
 
 #### Reliability Assessment ####
 source('code/reliability.R')
@@ -172,9 +174,9 @@ source('code/collapse.R')
 
 # synthetic pop ests at the tract level
 # 
-sypt <- aggregate_by_geo(syp, geo_lookup, normalize = F)
+sypt <- aggregate_by_geo(res$wt_matrix, geo_lookup, normalize = F)
 
-estt <- colSums(s * sypt * res$N) / colSums(sypt * res$N)
+estt <- colSums(s * sypt) / colSums(sypt)
 
 ## map results
 library(sf)

@@ -81,15 +81,14 @@ aggregate_by_geo <- function(alc, geo_lookup, N = NULL, normalize = T){
     geo_lookup: Geographic lookup table. Column 1: P-MEDM allocation units,
     Column 2: Aggregation units.
     
-    N: Population size. Provide this only if `alc` consists of counts.
+    N: Population size. Provide this only if `alc` consists of probabilities.
     
     normalize: whether or not to normalize the synthetic
-      population estimates by each area's total population. Set TRUE
-      only if `alc` consists of counts.
+      population estimates by each area's total population. 
   "
   
   if(!missing(N)){
-    alc <- alc / N
+    alc <- alc * N
   }
   
   alc <- t(aggregate(t(alc) ~ geo_lookup[,2], FUN = sum)[,-1])
