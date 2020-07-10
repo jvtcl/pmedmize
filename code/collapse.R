@@ -16,7 +16,14 @@ build_unique_ids <- function(pums){
   key = wcAggregateCases(pums)$disaggIndex
   
   list(key = key,
-       link = unique(key))
+  link = unique(key))
+  
+  # cases = wcAggregateCases(pums)
+  # with(cases, list(
+  #               key = disaggIndex,
+  #                  link = aggIndex,
+  #                  wt = aggWeights
+  #               ))
   
 }
 
