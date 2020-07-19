@@ -16,7 +16,14 @@ build_unique_ids <- function(pums){
   key = wcAggregateCases(pums)$disaggIndex
   
   list(key = key,
-       link = unique(key))
+  link = unique(key))
+  
+  # cases = wcAggregateCases(pums)
+  # with(cases, list(
+  #               key = disaggIndex,
+  #                  link = aggIndex,
+  #                  wt = aggWeights
+  #               ))
   
 }
 
@@ -69,3 +76,37 @@ build_synthetic_pops <- function(pums, alc, uid = NULL, normalize = T){
   dwt
   
 }
+
+aggregate_by_geo <- function(alc, geo_lookup, N = NULL, normalize = T){
+  
+  "
+  Aggregates P-MEDM allocation estimates (probabilities OR counts) based
+  on a geographic lookup table.
+  
+    alc: P-MEDM allocation matrix
+    
+    geo_lookup: Geographic lookup table. Column 1: P-MEDM allocation units,
+    Column 2: Aggregation units.
+    
+    N: Population size. Provide this only if `alc` consists of probabilities.
+    
+    normalize: whether or not to normalize the synthetic
+      population estimates by each area's total population. 
+  "
+  
+  if(!missing(N)){
+    alc <- alc * N
+  }
+  
+  alc <- t(aggregate(t(alc) ~ geo_lookup[,2], FUN = sum)[,-1])
+  colnames(alc) <- unique(geo_lookup[,2])
+  
+  if(normalize){
+    alc <- alc / rowSums(alc)
+  }
+  
+  alc
+  
+}
+
+

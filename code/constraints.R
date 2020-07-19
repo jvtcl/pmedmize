@@ -4,7 +4,7 @@ Helper functions for preparing P-MEDM constraints.
 
 library(matrixStats)
 
-prepare_constraints_ind <- function(schema){
+prepare_constraints_ind <- function(schema, pums){
   
   "
   Prepares P-MEDM constraints for individuals/PUMS.
@@ -14,7 +14,7 @@ prepare_constraints_ind <- function(schema){
   
   ctable <- lapply(cid, function(v){
     
-    do.call(v, args = list(pums = ipums))
+    do.call(v, args = list(pums = pums))
     
   })
   ctable <- do.call(cbind, ctable)

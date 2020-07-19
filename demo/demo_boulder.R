@@ -68,8 +68,8 @@ pmedm_constraints_bg <- prepare_constraints_geo(constraints_bg, schema)
 pmedm_constraints_trt <- prepare_constraints_geo(constraints_trt, schema)
 
 # exclude areas with zero pop (i.e., open water)
-pmedm_constraints_bg <- pmedm_constraints_bg[pmedm_constraints_bg[,2] > 0,]
-pmedm_constraints_trt <- pmedm_constraints_trt[pmedm_constraints_trt[,2] > 0,]
+# pmedm_constraints_bg <- pmedm_constraints_bg[pmedm_constraints_bg[,2] > 0,]
+# pmedm_constraints_trt <- pmedm_constraints_trt[pmedm_constraints_trt[,2] > 0,]
 
 # crosswalk
 geo_lookup <- data.frame(bg = pmedm_constraints_bg$GEOID, trt = substr(pmedm_constraints_bg$GEOID, 1, 11))
@@ -84,6 +84,8 @@ res <- pmedm(pums = ipums,
             geo_lookup = geo_lookup,
             output_minimal = FALSE)
 toc()
+
+# save(res, file = 'data/output/pmedm_bou16_person.RData')
 
 #### Reliability Assessment ####
 source('code/reliability.R')
@@ -166,3 +168,33 @@ ggplot() +
   scale_size_continuous(range = c(0, 1.5), limits = c(0, max(bg$est))) +
   theme_void() + 
   labs(size = 'Proportional \nEstimate', fill = 'Monte Carlo\nCV')
+
+#### Aggregating Estimates ####
+source('code/collapse.R')
+
+# synthetic pop ests at the tract level
+# 
+sypt <- aggregate_by_geo(res$wt_matrix, geo_lookup, normalize = F)
+
+estt <- colSums(s * sypt) / colSums(sypt)
+
+## map results
+library(sf)
+locs <- colnames(sypt)
+
+if(!dir.exists('temp')){
+  dir.create('temp')
+}
+
+if(!file.exists('temp/cb_2016_08_tract_500k.shp')){
+  download.file('https://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_08_tract_500k.zip',
+                destfile = 'temp/co_trt.zip')
+  unzip(zipfile = 'temp/co_trt.zip', exdir = 'temp')
+  file.remove('temp/co_trt.zip')
+}
+
+trt <- read_sf('temp', 'cb_2016_08_tract_500k')
+trt <- trt[match(locs, trt$GEOID),]
+
+trt['est'] <- estt
+plot(trt['est'], lwd = 0.1)

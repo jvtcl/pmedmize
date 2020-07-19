@@ -2,7 +2,7 @@
 Reliability/internal validity assessment for P-MEDM.
 "
 
-sae <- function(res){
+sae <- function(res, use.absolute.values = TRUE){
   
   "
   Standard allocation error for P-MEDM fit (Rose and Nagle 2017). 
@@ -11,13 +11,21 @@ sae <- function(res){
   Y.start = prod(dim(res$Y[[1]])) + 1 # starting index for SF constraints
   Y.end = prod(dim(res$Y[[1]])) + prod(dim(res$Y[[2]])) # final index
   
+  if(is.null(res$N)){
+    res$N <- sum(res$wt)
+  }
+  
   Yhat = res$t$pred[Y.start : Y.end] * res$N # convert probabilities to counts
   Yhat = matrix(Yhat, nrow = dim(res$Y[[2]])[1], ncol = dim(res$Y[[2]])[2]) # reshape to matrix
   colnames(Yhat) <- colnames(res$Y[[1]])
   
   p.sae <- function(p, a){
     
-    sum(p-a) / sum(a)
+    if(use.absolute.values){
+      sum(abs(p-a)) / sum(a) # absolute value SAE
+    }else{
+      sum(p-a) / sum(a) # original
+    }
     
   }
   

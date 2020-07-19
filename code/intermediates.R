@@ -3,6 +3,8 @@ Definitions for intermediate variables to build individual-level
 P-MEDM constraints.
 "
 
+data_path = paste(dirname(dirname(sys.frame(1)$ofile)), 'data/', sep = '/')
+
 assign_householder_item_level <- function(pums, v){
 
   "
@@ -135,7 +137,7 @@ builtr <- function(pums){
   Household: Dwelling Built Year
   "
 
-  built_key <- read.csv('data/PUMS_BUILTYR2.csv')
+  built_key <- read.csv(file.path(data_path, 'PUMS_BUILTYR2.csv'))
   v <- factor(built_key$label[match(pums$BUILTYR2,built_key$code)],
                  levels = unique(built_key$label))
 
@@ -463,7 +465,7 @@ relatedr <- function(pums){
   "
 
   # metadata
-  related <- read.csv('data/PUMS_RELATED.csv', stringsAsFactors = F)[,c('code','label')]
+  related <- read.csv(file.path(data_path, 'PUMS_RELATED.csv'), stringsAsFactors = F)[,c('code','label')]
 
   v <- factor(related$label[match(pums$RELATED,related$code)],
               levels=related$label[!is.na(related$code)])
@@ -520,7 +522,7 @@ unitsr <- function(pums){
   Household: Units in Structure
   "
 
-  units_key <- read.csv('data/PUMS_UNITSSTR.csv')
+  units_key <- read.csv(file.path(data_path, 'PUMS_UNITSSTR.csv'))
   v <- factor(units_key$label[match(pums$UNITSSTR, units_key$code)],
               levels = units_key$label)
 

@@ -1,6 +1,6 @@
 library(plyr)
 
-data_path = paste(dirname(dirname(sys.frame(1)$ofile)), 'data/', sep = '/')
+data_path = paste(dirname(dirname(sys.frame(1)$ofile)), '../data/', sep = '/')
 
 # assign_person_ids=function(pums){
 #
