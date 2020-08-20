@@ -20,7 +20,7 @@ assign_person_ids=function(pums){
 
 }
 
-pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
+pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt, type='person',
                   output_minimal = TRUE){
 
   "
@@ -51,18 +51,35 @@ pmedm <- function(pums, pums_in, geo_lookup, datch, datpt, type='person',
   if(!type %in% c('person', 'household')){
     stop('Argument `type` must be one of: `person`, `household`.')
   }
+  
+  if(!pums_type %in% c('ipums', 'acs')){
+    stop('Argument `type` must be one of: `ipums`, `acs`.')
+  }
 
   ## Microdata inputs
   if(type=='person'){
-    wt <- pums$PERWT
-    serial <- assign_person_ids(pums)
+    if(pums_type == 'ipums'){
+      wt <- pums$PERWT
+      serial <- assign_person_ids(pums)
+    }else if(pums_type == 'acs'){
+      wt <- pums$PWGTP
+      serial <- pums$SERIALNO
+    }
   }else{
     # subset to household head, limit to occupied housing units
-    hhsub <- (pums$RELATED == 101) & (pums$GQ %in% c(1:2))
-    pums <- pums[hhsub,] 
-    pums_in <- pums_in[hhsub,] 
-    wt <- pums$HHWT
-    serial <- pums$SERIAL
+    if(pums_type == 'ipums'){
+      hhsub <- (pums$RELATED == 101) & (pums$GQ %in% c(1:2))
+      pums <- pums[hhsub,] 
+      pums_in <- pums_in[hhsub,] 
+      wt <- pums$HHWT
+      serial <- pums$SERIAL
+    }else if(pums_type == 'acs'){
+      hhsub <- pums$TYPE == 1
+      pums <- pums[hhsub,] 
+      pums_in <- pums_in[hhsub,] 
+      wt <- pums$WGTP
+      serial <- pums$SERIALNO      
+    }
   }
   pums_in <- as.matrix(pums_in)
   pX <- list(drop0(pums_in), drop0(pums_in))
