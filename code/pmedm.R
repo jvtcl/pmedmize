@@ -52,28 +52,28 @@ pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt,
     stop('Argument `type` must be one of: `person`, `household`.')
   }
   
-  if(!pums_type %in% c('ipums', 'acs')){
-    stop('Argument `type` must be one of: `ipums`, `acs`.')
+  if(!pums_style %in% c('ipums', 'acs')){
+    stop('Argument `pums_style` must be one of: `ipums`, `acs`.')
   }
 
   ## Microdata inputs
   if(type=='person'){
-    if(pums_type == 'ipums'){
+    if(pums_style == 'ipums'){
       wt <- pums$PERWT
       serial <- assign_person_ids(pums)
-    }else if(pums_type == 'acs'){
+    }else if(pums_style == 'acs'){
       wt <- pums$PWGTP
       serial <- pums$SERIALNO
     }
   }else{
     # subset to household head, limit to occupied housing units
-    if(pums_type == 'ipums'){
+    if(pums_style == 'ipums'){
       hhsub <- (pums$RELATED == 101) & (pums$GQ %in% c(1:2))
       pums <- pums[hhsub,] 
       pums_in <- pums_in[hhsub,] 
       wt <- pums$HHWT
       serial <- pums$SERIAL
-    }else if(pums_type == 'acs'){
+    }else if(pums_style == 'acs'){
       hhsub <- pums$TYPE == 1
       pums <- pums[hhsub,] 
       pums_in <- pums_in[hhsub,] 
