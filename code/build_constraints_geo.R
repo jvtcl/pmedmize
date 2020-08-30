@@ -41,13 +41,25 @@ get_table = function(v, table, key, name, year, level, geo){
   b_rename = gsub('_', '', moe_vars)
   b_rename = gsub('M$', '', b_rename)
 
-  est = a[,order(a_rename)]
-  names(est) = sort(a_rename)
-  moe = b[,order(b_rename)]
-  names(moe) = sort(b_rename)
+  # safeguard for one-column tables    
+  if(length(table_vars) > 1){
+    est = a[,order(a_rename)]
+    names(est) = sort(a_rename)
+    moe = b[,order(b_rename)]
+    names(moe) = sort(b_rename)  
+  }else{
+    est <- data.frame(a)
+    moe <- data.frame(b)
+    names(est) <- paste0(table, '001')
+    names(moe) <- paste0(table, '001')
+  }
 
   ## MOE to SE
-  se = do.call(cbind.data.frame, lapply(1:ncol(moe), function(i) moe[,i] / 1.645))
+  if(length(moe_vars) > 1){
+    se = do.call(cbind.data.frame, lapply(1:ncol(moe), function(i) moe[,i] / 1.645))
+  }else{
+    se <- moe / 1.645
+  }
   names(se) = paste0(names(moe), 's')
 
   list(geoid = geoid, est = est, moe = moe, se = se)
