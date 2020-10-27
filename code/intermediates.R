@@ -3,8 +3,6 @@ Definitions for intermediate variables to build individual-level
 P-MEDM constraints.
 "
 
-data_path = paste(dirname(dirname(sys.frame(1)$ofile)), 'data/', sep = '/')
-
 assign_householder_item_level <- function(pums, v){
 
   "

@@ -20,8 +20,7 @@ assign_person_ids=function(pums){
 
 }
 
-pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt, type='person',
-                  output_minimal = TRUE){
+pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt, q = NULL, lambda = NULL, type='person', output_minimal = TRUE){
 
   "
   Wrapper for `PMEDMrcpp::pmedm_solve`. Adapted from various examples by Nagle
@@ -47,11 +46,11 @@ pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt,
     Returns a list containing the P-MEDM object and model variables.
 
   "
-  
+
   if(!type %in% c('person', 'household')){
     stop('Argument `type` must be one of: `person`, `household`.')
   }
-  
+
   if(!pums_style %in% c('ipums', 'acs')){
     stop('Argument `pums_style` must be one of: `ipums`, `acs`.')
   }
@@ -69,16 +68,16 @@ pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt,
     # subset to household head, limit to occupied housing units
     if(pums_style == 'ipums'){
       hhsub <- (pums$RELATED == 101) & (pums$GQ %in% c(1:2))
-      pums <- pums[hhsub,] 
-      pums_in <- pums_in[hhsub,] 
+      pums <- pums[hhsub,]
+      pums_in <- pums_in[hhsub,]
       wt <- pums$HHWT
       serial <- pums$SERIAL
     }else if(pums_style == 'acs'){
       hhsub <- pums$TYPE == 1
-      pums <- pums[hhsub,] 
-      pums_in <- pums_in[hhsub,] 
+      pums <- pums[hhsub,]
+      pums_in <- pums_in[hhsub,]
       wt <- pums$WGTP
-      serial <- pums$SERIALNO      
+      serial <- pums$SERIALNO
     }
   }
   pums_in <- as.matrix(pums_in)
@@ -174,15 +173,17 @@ pmedm <- function(pums, pums_style = 'ipums', pums_in, geo_lookup, datch, datpt,
   X <- t(rbind(kronecker(t(pX[[1]]), A[[1]]), kronecker(t(pX[[2]]), A[[2]])))
 
   # Create design weights and normalize
-  q <- matrix(wt, n, dim(A[[1]])[2])
-  q <- q / sum(as.numeric(q))
-  q <- as.vector(t(q))
+  if(is.null(q)){
+    q <- matrix(wt, n, dim(A[[1]])[2])
+    q <- q / sum(as.numeric(q))
+    q <- as.vector(t(q))
+  }
 
   X <- as(X, 'dgCMatrix')
   sV <- as(sV, 'dgCMatrix')
 
   ## Solve PMEDM Problem
-  t <- PMEDM_solve(X, Y_vec, sV, q)
+  t <- PMEDM_solve(X, Y_vec, sV, q, lambda)
 
   ## Allocation matrix
   wt_matrix <- matrix(t$p, nrow(pums_in), dim(A[[1]])[2], byrow = TRUE) * N
